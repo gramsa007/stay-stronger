@@ -83,14 +83,67 @@ const getStaticWarmup = (focus: string) => {
 • 10x Plank zu Downward Dog Wechsel`;
 };
 
+// --- NEU: HILFSFUNKTION: Statisches Cool Down generieren ---
+const getStaticCooldown = (focus: string) => {
+  const focusLower = focus?.toLowerCase() || "";
+
+  if (focusLower.includes("leg") || focusLower.includes("bein") || focusLower.includes("unterkörper")) {
+    return `❄️ BEIN-FOKUS COOL DOWN
+
+1. HÜFTE & GESÄSS (2 Min)
+• Pigeon Pose (Taube) - 1 Min pro Seite
+• Couch Stretch (Hüftbeuger an Wand) - 1 Min pro Seite
+
+2. OBERSCHENKEL (2 Min)
+• Standing Quad Stretch (Ferse zum Po) - 45s pro Seite
+• Seated Hamstring Stretch (Vorbeuge im Sitzen) - 90s halten
+
+3. RELAX (1 Min)
+• Legs Up The Wall (Beine an Wand hochlegen)
+• Tiefes Atmen in den Bauch`;
+  }
+
+  if (focusLower.includes("push") || focusLower.includes("pull") || focusLower.includes("upper") || focusLower.includes("oberkörper")) {
+    return `❄️ OBERKÖRPER COOL DOWN
+
+1. BRUST & SCHULTERN (2 Min)
+• Doorway Stretch (Arme im Türrahmen) - 1 Min halten
+• Cross-Body Shoulder Stretch - 30s pro Seite
+
+2. RÜCKEN (2 Min)
+• Child's Pose (Kindhaltung, Arme weit vor) - 1 Min
+• Lat Stretch (Arm über Kopf zur Seite neigen) - 30s pro Seite
+• Thread the Needle (Vierfüßler, durchfädeln) - 30s pro Seite
+
+3. NACKEN (1 Min)
+• Sanftes Nacken-Neigen (Ohr zur Schulter) - Vorsichtig!`;
+  }
+
+  // Fallback / Ganzkörper
+  return `❄️ GENERAL COOL DOWN
+
+1. POSTERIOR CHAIN (2 Min)
+• Standing Forward Fold (Vorbeuge im Stand, Knie leicht gebeugt) - entspannt aushängen
+• Downward Dog (Herabschauender Hund) - Waden dehnen
+
+2. SPINE & HIPS (2 Min)
+• World's Greatest Stretch (langsam halten)
+• Spinal Twist im Liegen (Knie zur Seite fallen lassen)
+
+3. ATMEN & ENTSPANNEN (1 Min)
+• Corpse Pose (Savasana) - flach liegen, Augen zu
+• Box Breathing (4s Ein, 4s Halten, 4s Aus, 4s Halten)`;
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState('training');
   const [activeWeek, setActiveWeek] = useState(1);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [previewWorkout, setPreviewWorkout] = useState<any>(null);
 
-  // --- NEU: State für das generierte Warm-up ---
+  // State für Routinen
   const [currentWarmupRoutine, setCurrentWarmupRoutine] = useState("");
+  const [currentCooldownRoutine, setCurrentCooldownRoutine] = useState(""); // <--- NEU
 
   const [data, setData] = useState(() => {
     const savedData = localStorage.getItem('coachAndyData');
@@ -159,9 +212,12 @@ function App() {
                 setActiveWorkoutData(parsedState);
                 setSelectedWorkoutId(parsedState.id);
                 
-                // FIX: Warmup Text auch beim Reload wiederherstellen!
+                // Routinen wiederherstellen
                 const specificWarmup = getStaticWarmup(parsedState.focus);
                 setCurrentWarmupRoutine(specificWarmup);
+
+                const specificCooldown = getStaticCooldown(parsedState.focus); // <--- NEU
+                setCurrentCooldownRoutine(specificCooldown);
 
                 setIsWarmupActive(false); 
             } else {
@@ -278,10 +334,13 @@ function App() {
       setActiveWorkoutData(JSON.parse(JSON.stringify(originalWorkout)));
       setSelectedWorkoutId(id);
 
-      // --- HIER WIRD DAS WARMUP GENERIERT ---
+      // --- HIER WERDEN BEIDE ROUTINEN GENERIERT ---
       const specificWarmup = getStaticWarmup(originalWorkout.focus);
       setCurrentWarmupRoutine(specificWarmup); 
-      // -------------------------------------
+
+      const specificCooldown = getStaticCooldown(originalWorkout.focus); // <--- NEU
+      setCurrentCooldownRoutine(specificCooldown);
+      // -------------------------------------------
 
       setIsWarmupActive(true);
       setIsCooldownActive(false); 
@@ -473,7 +532,6 @@ function App() {
       return (
           <>
             {ExitDialogComponent}
-            {/* WICHTIG: Hier wird jetzt 'currentWarmupRoutine' übergeben! */}
             <WarmupScreen 
                 prompt={currentWarmupRoutine} 
                 onComplete={(elapsed) => { setElapsedWarmupTime(elapsed); setIsWarmupActive(false); }}
@@ -487,7 +545,11 @@ function App() {
       return (
           <>
             {ExitDialogComponent}
-            <CooldownScreen prompt={cooldownPrompt} onComplete={handleFinalizeWorkout} />
+            {/* WICHTIG: Hier wird jetzt currentCooldownRoutine übergeben */}
+            <CooldownScreen 
+                prompt={currentCooldownRoutine} 
+                onComplete={handleFinalizeWorkout} 
+            />
           </>
       )
   }
