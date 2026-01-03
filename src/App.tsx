@@ -158,7 +158,11 @@ function App() {
             if (confirm("Ein abgebrochenes Workout wurde gefunden. Möchtest du es fortsetzen?")) {
                 setActiveWorkoutData(parsedState);
                 setSelectedWorkoutId(parsedState.id);
-                // Wenn wir resumen, überspringen wir meist das Warmup, oder setzen es als fertig
+                
+                // FIX: Warmup Text auch beim Reload wiederherstellen!
+                const specificWarmup = getStaticWarmup(parsedState.focus);
+                setCurrentWarmupRoutine(specificWarmup);
+
                 setIsWarmupActive(false); 
             } else {
                 localStorage.removeItem('coachAndyActiveState');
@@ -193,7 +197,6 @@ function App() {
     return () => clearInterval(interval);
   }, [isRestActive]);
 
-  // --- STATS HELPER ---
   const getStats = () => {
     const total = history.length;
     const now = new Date();
@@ -205,20 +208,15 @@ function App() {
     return { total, thisWeek };
   };
 
-  // --- CSV EXPORT HELPER ---
   const handleCSVExport = () => {
       if (history.length === 0) {
           alert("Keine Daten zum Exportieren.");
           return;
       }
-
-      // CSV Header
       let csvContent = "Datum,Woche,Workout Name,Typ,Uebung,Satz,Gewicht (kg),Wiederholungen\n";
-
       history.forEach(entry => {
           const date = new Date(entry.date).toLocaleDateString();
           const workoutName = entry.workoutTitle.replace(/,/g, ""); 
-          
           if (entry.snapshot && entry.snapshot.exercises) {
               entry.snapshot.exercises.forEach((ex: any) => {
                   const exName = ex.name.replace(/,/g, "");
@@ -230,7 +228,6 @@ function App() {
               });
           }
       });
-
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -241,7 +238,6 @@ function App() {
       document.body.removeChild(link);
   };
 
-  // --- VOLUME CALCULATION FOR CHART ---
   const calculateVolume = (snapshot: any) => {
       if (!snapshot || !snapshot.exercises) return 0;
       let vol = 0;
@@ -258,13 +254,11 @@ function App() {
   const getLastWorkoutsVolume = () => {
       const last5 = history.slice(0, 5).reverse(); 
       if (last5.length === 0) return [];
-
       const volumes = last5.map(h => ({
           date: new Date(h.date).toLocaleDateString(undefined, {weekday: 'short'}),
           volume: calculateVolume(h.snapshot),
           id: h.id
       }));
-      
       const maxVol = Math.max(...volumes.map(v => v.volume));
       return volumes.map(v => ({...v, height: maxVol > 0 ? (v.volume / maxVol) * 100 : 0 }));
   };
@@ -284,10 +278,10 @@ function App() {
       setActiveWorkoutData(JSON.parse(JSON.stringify(originalWorkout)));
       setSelectedWorkoutId(id);
 
-      // --- WICHTIG: Hier wird das Warmup generiert ---
+      // --- HIER WIRD DAS WARMUP GENERIERT ---
       const specificWarmup = getStaticWarmup(originalWorkout.focus);
       setCurrentWarmupRoutine(specificWarmup); 
-      // ---------------------------------------------
+      // -------------------------------------
 
       setIsWarmupActive(true);
       setIsCooldownActive(false); 
@@ -296,8 +290,6 @@ function App() {
       playBeep(0, 'sine', 0.001, 0); 
     }
   };
-
-  const visibleWorkouts = data.filter((workout: any) => workout.week === activeWeek);
 
   const handleInputChange = (exerciseIndex: number, setIndex: number, field: string, value: string) => {
     if (!activeWorkoutData) return;
@@ -481,7 +473,7 @@ function App() {
       return (
           <>
             {ExitDialogComponent}
-            {/* HIER WIRD JETZT currentWarmupRoutine VERWENDET */}
+            {/* WICHTIG: Hier wird jetzt 'currentWarmupRoutine' übergeben! */}
             <WarmupScreen 
                 prompt={currentWarmupRoutine} 
                 onComplete={(elapsed) => { setElapsedWarmupTime(elapsed); setIsWarmupActive(false); }}
@@ -503,7 +495,7 @@ function App() {
   if (selectedWorkoutId && activeWorkoutData) {
     return (
       <div className="min-h-screen bg-neutral-900 flex justify-center font-sans">
-        <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl">
+        <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden">
           {ExitDialogComponent}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-2 px-4 sticky top-0 z-10 shadow-lg">
             <div className="flex justify-between items-center">
