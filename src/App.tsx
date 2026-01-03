@@ -5,7 +5,7 @@ import {
   Dumbbell, ArrowLeft, Save, Flame, Download, Upload, UserCircle, Trash2, History,
   CheckCircle2, CheckSquare, CalendarDays, Cloud, Database, Clock, Target, ChevronRight,
   FileText, Zap, Wind, Sparkles, ClipboardCheck, Package, Volume2, Trophy, AlertTriangle,
-  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool, PlayCircle, Youtube
+  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool, Youtube, TrendingUp, Calendar
 } from 'lucide-react';
 
 // Imports from new file structure
@@ -28,7 +28,136 @@ import { ExitDialog } from './components/ExitDialog';
 import { PromptModal } from './components/PromptModal';
 import { EquipmentModal } from './components/EquipmentModal';
 
-// --- NEU: CUSTOM LOG MODAL ---
+// --- NEU: EXERCISE ANALYSIS MODAL (CHARTS) ---
+const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) => {
+  if (!isOpen || !exerciseName) return null;
+
+  // Daten aufbereiten: Finde alle Einträge dieser Übung, sortiert nach Datum (alt -> neu)
+  const dataPoints = history.map((h: any) => {
+      if (!h.snapshot || !h.snapshot.exercises) return null;
+      const ex = h.snapshot.exercises.find((e: any) => e.name === exerciseName);
+      if (!ex) return null;
+      
+      // Das "Beste" Gewicht des Tages finden
+      const bestWeight = ex.logs.reduce((max: number, log: any) => {
+          const w = parseFloat(log.weight) || 0;
+          return w > max && log.completed ? w : max;
+      }, 0);
+
+      if (bestWeight === 0) return null;
+
+      return {
+          date: new Date(h.date),
+          dateLabel: new Date(h.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
+          weight: bestWeight
+      };
+  }).filter(Boolean).reverse(); // Reverse, damit älteste zuerst kommen für den Chart
+
+  const hasData = dataPoints.length > 0;
+  const maxWeight = hasData ? Math.max(...dataPoints.map((d: any) => d.weight)) : 0;
+  const minWeight = hasData ? Math.min(...dataPoints.map((d: any) => d.weight)) : 0;
+  
+  // Chart Scaling
+  const chartHeight = 150;
+  const chartWidth = 300; // Viewbox units
+  const padding = 20;
+
+  const getY = (weight: number) => {
+      if (maxWeight === minWeight) return chartHeight / 2;
+      return chartHeight - padding - ((weight - minWeight) / (maxWeight - minWeight)) * (chartHeight - (padding * 2));
+  };
+
+  const getPoints = () => {
+      if (dataPoints.length === 1) return `0,${getY(dataPoints[0].weight)} ${chartWidth},${getY(dataPoints[0].weight)}`;
+      return dataPoints.map((d: any, i: number) => {
+          const x = (i / (dataPoints.length - 1)) * chartWidth;
+          const y = getY(d.weight);
+          return `${x},${y}`;
+      }).join(" ");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-0 overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Fortschritts-Analyse</p>
+                <h2 className="text-xl font-black leading-none">{exerciseName}</h2>
+            </div>
+            <button onClick={onClose} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><X size={20}/></button>
+        </div>
+        
+        <div className="p-5 overflow-y-auto">
+            {!hasData ? (
+                <div className="text-center text-gray-400 py-10">
+                    <BarChart3 className="mx-auto mb-2 opacity-50" size={48}/>
+                    <p>Noch keine Daten für diese Übung.</p>
+                </div>
+            ) : (
+                <>
+                    {/* CHART AREA */}
+                    <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 shadow-inner relative">
+                        <div className="flex justify-between text-xs text-gray-400 font-bold mb-2">
+                            <span>{minWeight} kg</span>
+                            <span>MAX: {maxWeight} kg</span>
+                        </div>
+                        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32 overflow-visible">
+                            {/* Grid Lines */}
+                            <line x1="0" y1={padding} x2={chartWidth} y2={padding} stroke="#e5e7eb" strokeDasharray="4"/>
+                            <line x1="0" y1={chartHeight/2} x2={chartWidth} y2={chartHeight/2} stroke="#e5e7eb" strokeDasharray="4"/>
+                            <line x1="0" y1={chartHeight-padding} x2={chartWidth} y2={chartHeight-padding} stroke="#e5e7eb" strokeDasharray="4"/>
+                            
+                            {/* The Line */}
+                            <polyline 
+                                fill="none" 
+                                stroke="#2563eb" 
+                                strokeWidth="3" 
+                                points={getPoints()} 
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="drop-shadow-md"
+                            />
+                            
+                            {/* Data Dots */}
+                            {dataPoints.map((d: any, i: number) => (
+                                <circle 
+                                    key={i} 
+                                    cx={(i / (dataPoints.length - 1 || 1)) * chartWidth} 
+                                    cy={getY(d.weight)} 
+                                    r="4" 
+                                    className="fill-white stroke-blue-600 stroke-2"
+                                />
+                            ))}
+                        </svg>
+                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
+                            <span>{dataPoints[0].dateLabel}</span>
+                            <span>{dataPoints[dataPoints.length - 1].dateLabel}</span>
+                        </div>
+                    </div>
+
+                    {/* HISTORY LIST */}
+                    <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm"><History size={16} className="text-blue-600"/> Historie (Best Sets)</h3>
+                    <div className="space-y-2">
+                        {/* Zeige die Liste umgekehrt (neueste oben) */}
+                        {[...dataPoints].reverse().map((d: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><Calendar size={14}/></div>
+                                    <span className="text-sm font-bold text-gray-700">{d.dateLabel}</span>
+                                </div>
+                                <span className="text-lg font-black text-gray-900">{d.weight} <span className="text-xs font-normal text-gray-400">kg</span></span>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- CUSTOM LOG MODAL ---
 const CustomLogModal = ({ isOpen, onClose, onSave }: any) => {
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
@@ -96,6 +225,9 @@ function App() {
   const [currentWarmupRoutine, setCurrentWarmupRoutine] = useState("");
   const [currentCooldownRoutine, setCurrentCooldownRoutine] = useState("");
   const [showCustomLogModal, setShowCustomLogModal] = useState(false);
+  
+  // NEU: State für Analyse
+  const [analysisExercise, setAnalysisExercise] = useState<string | null>(null);
 
   const [data, setData] = useState(() => {
     const savedData = localStorage.getItem('coachAndyData');
@@ -115,40 +247,27 @@ function App() {
     return history.some((entry: any) => entry.workoutId === workoutId);
   };
 
-  // --- NEW: GHOST VALUE LOGIC ---
   const getLastLogForExercise = (exerciseName: string) => {
-    // Finde alle Workouts im Verlauf, die diese Übung enthalten
     const relevantEntries = history.filter(h => 
       h.snapshot && h.snapshot.exercises && h.snapshot.exercises.some((ex: any) => ex.name === exerciseName)
     );
-    
     if (relevantEntries.length === 0) return null;
-    
-    // Nimm das neuste (History ist sortiert: neueste zuerst)
     const lastEntry = relevantEntries[0];
     const exerciseData = lastEntry.snapshot.exercises.find((ex: any) => ex.name === exerciseName);
-    
     return exerciseData ? exerciseData.logs : null;
   };
 
-  // --- NEW: STREAK CALCULATION ---
   const getStreakStats = () => {
     if (history.length === 0) return { currentStreak: 0, bestStreak: 0 };
-    
-    // Sortiere Tage unique
     const uniqueDays = Array.from(new Set(history.map(h => new Date(h.date).toDateString()))).map(d => new Date(d).getTime()).sort((a,b) => b-a);
-    
     let current = 0;
     const today = new Date().setHours(0,0,0,0);
     const yesterday = today - 86400000;
-
-    // Check ob heute oder gestern trainiert wurde für den Start
     if (uniqueDays.length > 0) {
         if (uniqueDays[0] === today || uniqueDays[0] === yesterday) {
             current = 1;
             for (let i = 0; i < uniqueDays.length - 1; i++) {
-                // Wenn der nächste Eintrag genau 1 Tag davor war
-                if (uniqueDays[i] - uniqueDays[i+1] <= 86400000 + 10000) { // Toleronz wegen Zeitumstellung etc
+                if (uniqueDays[i] - uniqueDays[i+1] <= 86400000 + 10000) { 
                     current++;
                 } else {
                     break;
@@ -572,6 +691,12 @@ function App() {
       <div className="min-h-screen bg-neutral-900 flex justify-center font-sans">
         <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden">
           {ExitDialogComponent}
+          <ExerciseAnalysisModal 
+            isOpen={!!analysisExercise} 
+            onClose={() => setAnalysisExercise(null)} 
+            exerciseName={analysisExercise} 
+            history={history} 
+          />
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-2 px-4 sticky top-0 z-10 shadow-lg">
             <div className="flex justify-between items-center">
               <button onClick={handleBackRequest} className="flex items-center gap-1 text-blue-200 hover:text-white transition-colors">
@@ -583,17 +708,17 @@ function App() {
           </div>
           <div className="p-4 space-y-3 max-w-md mx-auto">
             {activeWorkoutData.exercises.map((ex: any, exerciseIndex: number) => {
-              // GHOST DATA
               const lastLogs = getLastLogForExercise(ex.name);
-
               return (
               <div key={exerciseIndex} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100">
                 <div className="mb-2 border-b border-gray-100 pb-2">
                   <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
-                         <h3 className="font-bold text-base text-gray-800 leading-tight">{ex.name}</h3>
-                         {/* VIDEO LINK BUTTON */}
-                         <button onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise tutorial')}`, '_blank')} className="text-red-500 hover:text-red-700 transition-colors bg-red-50 p-1 rounded-full"><Youtube size={16} /></button>
+                         {/* HIER: KLICKBARER NAME FÜR ANALYSE */}
+                         <h3 onClick={() => setAnalysisExercise(ex.name)} className="font-bold text-base text-blue-700 cursor-pointer hover:underline decoration-blue-300 leading-tight flex items-center gap-1">
+                            {ex.name} <TrendingUp size={14} className="text-blue-300"/>
+                         </h3>
+                         <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise tutorial')}`, '_blank'); }} className="text-red-500 hover:text-red-700 transition-colors bg-red-50 p-1 rounded-full"><Youtube size={16} /></button>
                       </div>
                       <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">RPE {ex.rpe}</span>
                   </div>
@@ -604,7 +729,6 @@ function App() {
                     const isCompleted = log.completed;
                     const showRestTimerHere = isRestActive && activeRestContext.exerciseIndex === exerciseIndex && activeRestContext.setIndex === setIndex;
                     
-                    // Ghost Values berechnen
                     const ghostWeight = lastLogs && lastLogs[setIndex] ? lastLogs[setIndex].weight : '';
                     const ghostReps = lastLogs && lastLogs[setIndex] ? lastLogs[setIndex].reps : '';
                     const placeholderWeight = ghostWeight ? `Last: ${ghostWeight}` : 'kg';
@@ -641,6 +765,14 @@ function App() {
         {/* MODALS */}
         <CustomLogModal isOpen={showCustomLogModal} onClose={() => setShowCustomLogModal(false)} onSave={handleSaveCustomLog} />
         
+        {/* HIER: Analyse Modal hinzufügen */}
+        <ExerciseAnalysisModal 
+            isOpen={!!analysisExercise} 
+            onClose={() => setAnalysisExercise(null)} 
+            exerciseName={analysisExercise} 
+            history={history} 
+        />
+
         <PromptModal isOpen={activePromptModal === 'system'} onClose={() => setActivePromptModal(null)} title="Coach Philosophie" icon={FileText} colorClass="bg-gradient-to-r from-blue-600 to-indigo-700" currentPrompt={systemPrompt} onSave={handleSaveSystemPrompt} />
         <PromptModal isOpen={activePromptModal === 'warmup'} onClose={() => setActivePromptModal(null)} title="Warm-up Prompt" icon={Zap} colorClass="bg-gradient-to-r from-orange-500 to-red-600" currentPrompt={warmupPrompt} onSave={handleSaveWarmupPrompt} />
         <PromptModal isOpen={activePromptModal === 'cooldown'} onClose={() => setActivePromptModal(null)} title="Cool Down Prompt" icon={Wind} colorClass="bg-gradient-to-r from-teal-500 to-cyan-600" currentPrompt={cooldownPrompt} onSave={handleSaveCooldownPrompt} />
@@ -755,7 +887,12 @@ function App() {
                 <div className="p-4 space-y-4">
                     {selectedHistoryEntry.snapshot?.exercises.map((ex: any, i: number) => (
                         <div key={i} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 opacity-90">
-                            <h3 className="font-bold text-lg text-gray-800 border-b border-gray-100 pb-2 mb-2">{ex.name}</h3>
+                            <div className="border-b border-gray-100 pb-2 mb-2">
+                                {/* HIER: KLICKBARER NAME IM VERLAUF */}
+                                <h3 onClick={() => setAnalysisExercise(ex.name)} className="font-bold text-lg text-blue-700 cursor-pointer hover:underline decoration-blue-300 flex items-center gap-2">
+                                    {ex.name} <TrendingUp size={16} className="text-blue-300"/>
+                                </h3>
+                            </div>
                             <div className="space-y-2">{ex.logs.map((log: any, j: number) => (<div key={j} className="flex justify-between text-sm text-gray-600 bg-gray-50 p-2 rounded-lg"><span>Satz {j+1}</span><span className="font-bold">{log.weight}kg x {log.reps}</span></div>))}</div>
                         </div>
                     ))}
