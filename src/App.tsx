@@ -28,17 +28,15 @@ import { ExitDialog } from './components/ExitDialog';
 import { PromptModal } from './components/PromptModal';
 import { EquipmentModal } from './components/EquipmentModal';
 
-// --- NEU: EXERCISE ANALYSIS MODAL (CHARTS) ---
+// --- EXERCISE ANALYSIS MODAL (CHARTS) ---
 const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) => {
   if (!isOpen || !exerciseName) return null;
 
-  // Daten aufbereiten: Finde alle Einträge dieser Übung, sortiert nach Datum (alt -> neu)
   const dataPoints = history.map((h: any) => {
       if (!h.snapshot || !h.snapshot.exercises) return null;
       const ex = h.snapshot.exercises.find((e: any) => e.name === exerciseName);
       if (!ex) return null;
       
-      // Das "Beste" Gewicht des Tages finden
       const bestWeight = ex.logs.reduce((max: number, log: any) => {
           const w = parseFloat(log.weight) || 0;
           return w > max && log.completed ? w : max;
@@ -51,15 +49,14 @@ const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) 
           dateLabel: new Date(h.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
           weight: bestWeight
       };
-  }).filter(Boolean).reverse(); // Reverse, damit älteste zuerst kommen für den Chart
+  }).filter(Boolean).reverse(); 
 
   const hasData = dataPoints.length > 0;
   const maxWeight = hasData ? Math.max(...dataPoints.map((d: any) => d.weight)) : 0;
   const minWeight = hasData ? Math.min(...dataPoints.map((d: any) => d.weight)) : 0;
   
-  // Chart Scaling
   const chartHeight = 150;
-  const chartWidth = 300; // Viewbox units
+  const chartWidth = 300; 
   const padding = 20;
 
   const getY = (weight: number) => {
@@ -95,38 +92,18 @@ const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) 
                 </div>
             ) : (
                 <>
-                    {/* CHART AREA */}
                     <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 shadow-inner relative">
                         <div className="flex justify-between text-xs text-gray-400 font-bold mb-2">
                             <span>{minWeight} kg</span>
                             <span>MAX: {maxWeight} kg</span>
                         </div>
                         <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32 overflow-visible">
-                            {/* Grid Lines */}
                             <line x1="0" y1={padding} x2={chartWidth} y2={padding} stroke="#e5e7eb" strokeDasharray="4"/>
                             <line x1="0" y1={chartHeight/2} x2={chartWidth} y2={chartHeight/2} stroke="#e5e7eb" strokeDasharray="4"/>
                             <line x1="0" y1={chartHeight-padding} x2={chartWidth} y2={chartHeight-padding} stroke="#e5e7eb" strokeDasharray="4"/>
-                            
-                            {/* The Line */}
-                            <polyline 
-                                fill="none" 
-                                stroke="#2563eb" 
-                                strokeWidth="3" 
-                                points={getPoints()} 
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="drop-shadow-md"
-                            />
-                            
-                            {/* Data Dots */}
+                            <polyline fill="none" stroke="#2563eb" strokeWidth="3" points={getPoints()} strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md"/>
                             {dataPoints.map((d: any, i: number) => (
-                                <circle 
-                                    key={i} 
-                                    cx={(i / (dataPoints.length - 1 || 1)) * chartWidth} 
-                                    cy={getY(d.weight)} 
-                                    r="4" 
-                                    className="fill-white stroke-blue-600 stroke-2"
-                                />
+                                <circle key={i} cx={(i / (dataPoints.length - 1 || 1)) * chartWidth} cy={getY(d.weight)} r="4" className="fill-white stroke-blue-600 stroke-2"/>
                             ))}
                         </svg>
                         <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
@@ -134,11 +111,8 @@ const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) 
                             <span>{dataPoints[dataPoints.length - 1].dateLabel}</span>
                         </div>
                     </div>
-
-                    {/* HISTORY LIST */}
                     <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm"><History size={16} className="text-blue-600"/> Historie (Best Sets)</h3>
                     <div className="space-y-2">
-                        {/* Zeige die Liste umgekehrt (neueste oben) */}
                         {[...dataPoints].reverse().map((d: any, i: number) => (
                             <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
                                 <div className="flex items-center gap-3">
@@ -226,7 +200,6 @@ function App() {
   const [currentCooldownRoutine, setCurrentCooldownRoutine] = useState("");
   const [showCustomLogModal, setShowCustomLogModal] = useState(false);
   
-  // NEU: State für Analyse
   const [analysisExercise, setAnalysisExercise] = useState<string | null>(null);
 
   const [data, setData] = useState(() => {
@@ -714,7 +687,6 @@ function App() {
                 <div className="mb-2 border-b border-gray-100 pb-2">
                   <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
-                         {/* HIER: KLICKBARER NAME FÜR ANALYSE */}
                          <h3 onClick={() => setAnalysisExercise(ex.name)} className="font-bold text-base text-blue-700 cursor-pointer hover:underline decoration-blue-300 leading-tight flex items-center gap-1">
                             {ex.name} <TrendingUp size={14} className="text-blue-300"/>
                          </h3>
@@ -765,7 +737,6 @@ function App() {
         {/* MODALS */}
         <CustomLogModal isOpen={showCustomLogModal} onClose={() => setShowCustomLogModal(false)} onSave={handleSaveCustomLog} />
         
-        {/* HIER: Analyse Modal hinzufügen */}
         <ExerciseAnalysisModal 
             isOpen={!!analysisExercise} 
             onClose={() => setAnalysisExercise(null)} 
@@ -823,7 +794,13 @@ function App() {
                 </div>
                 <div onClick={() => setActivePromptModal('plan')} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-blue-50 text-blue-600 p-2 rounded-xl"><Sparkles size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Neuer 4-Wochen-Plan</h3><p className="text-xs text-gray-500">Erstelle einen neuen Plan mit KI</p></div></div><div className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-3 rounded-xl shadow-md"><ChevronRight size={20} /></div></div>
                 <div onClick={() => setShowEquipmentModal(true)} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-indigo-100 text-indigo-600 p-2 rounded-xl"><Package size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Mein Equipment</h3><p className="text-xs text-gray-500">Verfügbares Trainingsgerät</p></div></div><ChevronRight className="text-gray-300" /></div>
+                
+                {/* SETTINGS LISTE */}
                 <div onClick={() => setActivePromptModal('system')} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-blue-100 text-blue-600 p-2 rounded-xl"><FileText size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Coach Philosophie</h3><p className="text-xs text-gray-500">Identität & Regeln definieren</p></div></div><ChevronRight className="text-gray-300" /></div>
+                
+                {/* NEU: PLAN PROMPT HIER IN DER LISTE */}
+                <div onClick={() => setActivePromptModal('plan')} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-indigo-100 text-indigo-600 p-2 rounded-xl"><Sparkles size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Plan Generator Prompt</h3><p className="text-xs text-gray-500">KI-Anweisung für Pläne</p></div></div><ChevronRight className="text-gray-300" /></div>
+
                 <div onClick={() => setActivePromptModal('warmup')} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-orange-100 text-orange-600 p-2 rounded-xl"><Zap size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Warm-up Prompt</h3><p className="text-xs text-gray-500">Aufwärm-Routine anpassen</p></div></div><ChevronRight className="text-gray-300" /></div>
                 <div onClick={() => setActivePromptModal('cooldown')} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"><div className="flex items-center gap-3"><div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><Wind size={20} /></div><div><h3 className="font-bold text-lg text-gray-900">Cool Down Prompt</h3><p className="text-xs text-gray-500">Regeneration anpassen</p></div></div><ChevronRight className="text-gray-300" /></div>
                 <div className="pt-6 pb-4 flex flex-col gap-3 items-center border-t border-gray-200 mt-4"><button onClick={handleClearPlan} className="text-orange-400 text-xs font-bold flex items-center gap-1 hover:text-orange-600 transition-colors"><AlertTriangle size={12} /> Nur Plan löschen (Verlauf behalten)</button><button onClick={handleReset} className="text-red-400 text-xs font-bold flex items-center gap-1 hover:text-red-600 transition-colors"><Trash2 size={12} /> Alles zurücksetzen (Hard Reset)</button></div>
