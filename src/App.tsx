@@ -5,12 +5,12 @@ import {
   Dumbbell, ArrowLeft, Save, Flame, Download, Upload, UserCircle, Trash2, History,
   CheckCircle2, CheckSquare, CalendarDays, Cloud, Database, Clock, Target, ChevronRight,
   FileText, Zap, Wind, Sparkles, ClipboardCheck, Package, Volume2, Trophy, AlertTriangle,
-  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool, Youtube, TrendingUp, Calendar
+  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, Youtube, TrendingUp
 } from 'lucide-react';
 
-// Imports from new file structure
+// Imports from utils
 import { playBeep } from './utils/audio';
-import { prepareData, formatTime, formatDate } from './utils/helpers';
+import { prepareData, formatTime, formatDate, getStaticWarmup, getStaticCooldown } from './utils/helpers';
 import { 
     DEFAULT_SYSTEM_PROMPT, 
     DEFAULT_WARMUP_PROMPT, 
@@ -20,6 +20,7 @@ import {
     rawWorkouts 
 } from './utils/constants';
 
+// Imports from components (JETZT ALLE AUSGELAGERT)
 import { WorkoutTimer } from './components/WorkoutTimer';
 import { WarmupScreen } from './components/WarmupScreen';
 import { CooldownScreen } from './components/CooldownScreen';
@@ -27,168 +28,8 @@ import { PastePlanModal } from './components/PastePlanModal';
 import { ExitDialog } from './components/ExitDialog';
 import { PromptModal } from './components/PromptModal';
 import { EquipmentModal } from './components/EquipmentModal';
-
-// --- EXERCISE ANALYSIS MODAL (CHARTS) ---
-const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) => {
-  if (!isOpen || !exerciseName) return null;
-
-  const dataPoints = history.map((h: any) => {
-      if (!h.snapshot || !h.snapshot.exercises) return null;
-      const ex = h.snapshot.exercises.find((e: any) => e.name === exerciseName);
-      if (!ex) return null;
-      
-      const bestWeight = ex.logs.reduce((max: number, log: any) => {
-          const w = parseFloat(log.weight) || 0;
-          return w > max && log.completed ? w : max;
-      }, 0);
-
-      if (bestWeight === 0) return null;
-
-      return {
-          date: new Date(h.date),
-          dateLabel: new Date(h.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
-          weight: bestWeight
-      };
-  }).filter(Boolean).reverse(); 
-
-  const hasData = dataPoints.length > 0;
-  const maxWeight = hasData ? Math.max(...dataPoints.map((d: any) => d.weight)) : 0;
-  const minWeight = hasData ? Math.min(...dataPoints.map((d: any) => d.weight)) : 0;
-  
-  const chartHeight = 150;
-  const chartWidth = 300; 
-  const padding = 20;
-
-  const getY = (weight: number) => {
-      if (maxWeight === minWeight) return chartHeight / 2;
-      return chartHeight - padding - ((weight - minWeight) / (maxWeight - minWeight)) * (chartHeight - (padding * 2));
-  };
-
-  const getPoints = () => {
-      if (dataPoints.length === 1) return `0,${getY(dataPoints[0].weight)} ${chartWidth},${getY(dataPoints[0].weight)}`;
-      return dataPoints.map((d: any, i: number) => {
-          const x = (i / (dataPoints.length - 1)) * chartWidth;
-          const y = getY(d.weight);
-          return `${x},${y}`;
-      }).join(" ");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-0 overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh]">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white flex justify-between items-center shrink-0">
-            <div>
-                <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Fortschritts-Analyse</p>
-                <h2 className="text-xl font-black leading-none">{exerciseName}</h2>
-            </div>
-            <button onClick={onClose} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><X size={20}/></button>
-        </div>
-        
-        <div className="p-5 overflow-y-auto">
-            {!hasData ? (
-                <div className="text-center text-gray-400 py-10">
-                    <BarChart3 className="mx-auto mb-2 opacity-50" size={48}/>
-                    <p>Noch keine Daten für diese Übung.</p>
-                </div>
-            ) : (
-                <>
-                    <div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 shadow-inner relative">
-                        <div className="flex justify-between text-xs text-gray-400 font-bold mb-2">
-                            <span>{minWeight} kg</span>
-                            <span>MAX: {maxWeight} kg</span>
-                        </div>
-                        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32 overflow-visible">
-                            <line x1="0" y1={padding} x2={chartWidth} y2={padding} stroke="#e5e7eb" strokeDasharray="4"/>
-                            <line x1="0" y1={chartHeight/2} x2={chartWidth} y2={chartHeight/2} stroke="#e5e7eb" strokeDasharray="4"/>
-                            <line x1="0" y1={chartHeight-padding} x2={chartWidth} y2={chartHeight-padding} stroke="#e5e7eb" strokeDasharray="4"/>
-                            <polyline fill="none" stroke="#2563eb" strokeWidth="3" points={getPoints()} strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md"/>
-                            {dataPoints.map((d: any, i: number) => (
-                                <circle key={i} cx={(i / (dataPoints.length - 1 || 1)) * chartWidth} cy={getY(d.weight)} r="4" className="fill-white stroke-blue-600 stroke-2"/>
-                            ))}
-                        </svg>
-                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">
-                            <span>{dataPoints[0].dateLabel}</span>
-                            <span>{dataPoints[dataPoints.length - 1].dateLabel}</span>
-                        </div>
-                    </div>
-                    <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm"><History size={16} className="text-blue-600"/> Historie (Best Sets)</h3>
-                    <div className="space-y-2">
-                        {[...dataPoints].reverse().map((d: any, i: number) => (
-                            <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><Calendar size={14}/></div>
-                                    <span className="text-sm font-bold text-gray-700">{d.dateLabel}</span>
-                                </div>
-                                <span className="text-lg font-black text-gray-900">{d.weight} <span className="text-xs font-normal text-gray-400">kg</span></span>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- CUSTOM LOG MODAL ---
-const CustomLogModal = ({ isOpen, onClose, onSave }: any) => {
-  const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("");
-  const [note, setNote] = useState("");
-
-  if (!isOpen) return null;
-
-  const handleSubmit = () => {
-    if (!title) return alert("Bitte gib einen Titel ein.");
-    onSave(title, duration, note);
-    setTitle("");
-    setDuration("");
-    setNote("");
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 animate-in zoom-in-95">
-        <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
-          <PenTool size={20} className="text-blue-600"/> Freies Training
-        </h2>
-        <div className="space-y-4">
-          <div><label className="text-xs font-bold text-gray-500 uppercase">Aktivität</label><input type="text" placeholder="z.B. Laufen, Radfahren, Yoga" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
-          <div><label className="text-xs font-bold text-gray-500 uppercase">Dauer (Minuten)</label><input type="text" placeholder="z.B. 40" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
-          <div><label className="text-xs font-bold text-gray-500 uppercase">Details / Distanz</label><textarea placeholder="z.B. 8 km, lockeres Tempo" value={note} onChange={(e) => setNote(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:border-blue-500 outline-none h-24 resize-none"/></div>
-          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-transform">Speichern</button>
-          <button onClick={onClose} className="w-full text-gray-400 font-bold py-2 text-sm hover:text-gray-600">Abbrechen</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- HELPER FUNCTIONS ---
-
-const getStaticWarmup = (focus: string) => {
-  const focusLower = focus?.toLowerCase() || "";
-  if (focusLower.includes("leg") || focusLower.includes("bein") || focusLower.includes("unterkörper")) {
-    return `🔥 BEIN-FOKUS WARM-UP (RAMP)\n\n1. PULS (2 Min)\n• 1 Min Joggen auf der Stelle\n• 1 Min Jumping Jacks\n\n2. MOBILISIERUNG (2 Min)\n• 10x Leg Swings (vor/zurück pro Bein)\n• 10x Leg Swings (seitlich pro Bein)\n• 10x Tiefe Hocke (Deep Squat Hold)\n\n3. AKTIVIERUNG (1 Min)\n• 20x Glute Bridges\n• 10x Bodyweight Lunges`;
-  }
-  if (focusLower.includes("push") || focusLower.includes("pull") || focusLower.includes("upper") || focusLower.includes("oberkörper")) {
-    return `🔥 OBERKÖRPER WARM-UP (RAMP)\n\n1. PULS (2 Min)\n• 1 Min Seilspringen\n• 1 Min Armkreisen\n\n2. MOBILISIERUNG (2 Min)\n• 10x Wall Slides\n• 10x Cat-Cow Stretch\n• 10x Thoracic Rotation\n\n3. AKTIVIERUNG (1 Min)\n• 10x Band Pull-Aparts\n• 10x Scapular Push Ups`;
-  }
-  return `🔥 GENERAL WARM-UP (RAMP)\n\n1. RAISE (2 Min)\n• 30sek High Knees\n• 30sek Butt Kicks\n• 1 Min Hampelmann\n\n2. MOBILIZE (2 Min)\n• 10x World's Greatest Stretch\n• 10x Raupengang\n\n3. ACTIVATE (1 Min)\n• 15x Air Squats\n• 10x Plank zu Downward Dog`;
-};
-
-const getStaticCooldown = (focus: string) => {
-  const focusLower = focus?.toLowerCase() || "";
-  if (focusLower.includes("leg") || focusLower.includes("bein") || focusLower.includes("unterkörper")) {
-    return `❄️ BEIN-FOKUS COOL DOWN\n\n1. HÜFTE & GESÄSS (2 Min)\n• Pigeon Pose (Taube)\n• Couch Stretch\n\n2. OBERSCHENKEL (2 Min)\n• Standing Quad Stretch\n• Seated Hamstring Stretch\n\n3. RELAX (1 Min)\n• Legs Up The Wall`;
-  }
-  if (focusLower.includes("push") || focusLower.includes("pull") || focusLower.includes("upper") || focusLower.includes("oberkörper")) {
-    return `❄️ OBERKÖRPER COOL DOWN\n\n1. BRUST & SCHULTERN (2 Min)\n• Doorway Stretch\n• Cross-Body Shoulder Stretch\n\n2. RÜCKEN (2 Min)\n• Child's Pose\n• Lat Stretch\n\n3. NACKEN (1 Min)\n• Sanftes Nacken-Neigen`;
-  }
-  return `❄️ GENERAL COOL DOWN\n\n1. POSTERIOR CHAIN (2 Min)\n• Standing Forward Fold\n• Downward Dog\n\n2. SPINE & HIPS (2 Min)\n• Spinal Twist im Liegen\n\n3. ATMEN (1 Min)\n• Corpse Pose (Savasana)`;
-};
+import { CustomLogModal } from './components/CustomLogModal';
+import { ExerciseAnalysisModal } from './components/ExerciseAnalysisModal';
 
 function App() {
   const [activeTab, setActiveTab] = useState('training');
@@ -307,7 +148,6 @@ function App() {
   };
 
   const [activeWorkoutData, setActiveWorkoutData] = useState<any>(null);
-  
   const [isWarmupActive, setIsWarmupActive] = useState(false);
   const [isCooldownActive, setIsCooldownActive] = useState(false); 
   const [elapsedWarmupTime, setElapsedWarmupTime] = useState(0); 
@@ -316,7 +156,6 @@ function App() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [showPastePlanModal, setShowPastePlanModal] = useState(false); 
-  
   const [activePromptModal, setActivePromptModal] = useState<string | null>(null); 
 
   const [restSeconds, setRestSeconds] = useState(0); 
@@ -480,13 +319,6 @@ function App() {
       setIsRestActive(true);
       setActiveRestContext({ exerciseIndex, setIndex });
     }
-  };
-
-  const saveToGlobalState = (workoutData: any) => {
-    const newData = data.map((w: any) => w.id === workoutData.id ? workoutData : w);
-    setData(newData);
-    localStorage.setItem('coachAndyData', JSON.stringify(newData));
-    return newData;
   };
 
   const handleFinishWorkout = () => {
@@ -749,7 +581,6 @@ function App() {
         <PromptModal isOpen={activePromptModal === 'warmup'} onClose={() => setActivePromptModal(null)} title="Warm-up Prompt" icon={Zap} colorClass="bg-gradient-to-r from-orange-500 to-red-600" currentPrompt={warmupPrompt} onSave={handleSaveWarmupPrompt} />
         <PromptModal isOpen={activePromptModal === 'cooldown'} onClose={() => setActivePromptModal(null)} title="Cool Down Prompt" icon={Wind} colorClass="bg-gradient-to-r from-teal-500 to-cyan-600" currentPrompt={cooldownPrompt} onSave={handleSaveCooldownPrompt} />
         
-        {/* MODAL FÜR DAS EDITIEREN VOM PLAN PROMPT (SETTINGS) - Ohne History Append */}
         <PromptModal 
             isOpen={activePromptModal === 'editPlan'} 
             onClose={() => setActivePromptModal(null)} 
@@ -758,10 +589,8 @@ function App() {
             colorClass="bg-gradient-to-r from-blue-600 to-indigo-600" 
             currentPrompt={planPrompt} 
             onSave={handleSavePlanPrompt} 
-            // HIER IST DER TRICK: Kein appendEquipment, kein appendHistory
         />
 
-        {/* MODAL FÜR DAS GENERIEREN VOM PLAN (BUTTON) - Mit History Append */}
         <PromptModal 
             isOpen={activePromptModal === 'plan'} 
             onClose={() => setActivePromptModal(null)} 
