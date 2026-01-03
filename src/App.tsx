@@ -5,12 +5,12 @@ import {
   Dumbbell, ArrowLeft, Save, Flame, Download, Upload, UserCircle, Trash2, History,
   CheckCircle2, CheckSquare, CalendarDays, Cloud, Database, Clock, Target, ChevronRight,
   FileText, Zap, Wind, Sparkles, ClipboardCheck, Package, Volume2, Trophy, AlertTriangle,
-  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, Youtube, TrendingUp
+  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool, Youtube, TrendingUp, Calendar, Play
 } from 'lucide-react';
 
-// Imports from utils
+// Imports utils (diese Dateien hast du ja schon)
 import { playBeep } from './utils/audio';
-import { prepareData, formatTime, formatDate, getStaticWarmup, getStaticCooldown } from './utils/helpers';
+import { prepareData, formatTime, formatDate } from './utils/helpers';
 import { 
     DEFAULT_SYSTEM_PROMPT, 
     DEFAULT_WARMUP_PROMPT, 
@@ -20,16 +20,238 @@ import {
     rawWorkouts 
 } from './utils/constants';
 
-// Imports from components (JETZT ALLE AUSGELAGERT)
-import { WorkoutTimer } from './components/WorkoutTimer';
-import { WarmupScreen } from './components/WarmupScreen';
-import { CooldownScreen } from './components/CooldownScreen';
-import { PastePlanModal } from './components/PastePlanModal';
-import { ExitDialog } from './components/ExitDialog';
-import { PromptModal } from './components/PromptModal';
-import { EquipmentModal } from './components/EquipmentModal';
-import { CustomLogModal } from './components/CustomLogModal';
-import { ExerciseAnalysisModal } from './components/ExerciseAnalysisModal';
+// --- INLINE COMPONENTS (Damit alles sicher funktioniert) ---
+
+const WorkoutTimer = ({ transparent = false, initialTime = 0 }: { transparent?: boolean, initialTime?: number }) => {
+  const [seconds, setSeconds] = useState(initialTime);
+  const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds((s) => s + 1);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  return (
+    <div className={`flex items-center gap-2 ${transparent ? 'bg-white/10 text-white' : 'bg-white text-gray-800 border border-gray-200'} px-3 py-1.5 rounded-full shadow-sm`}>
+      <Clock size={14} className={isActive ? "animate-pulse text-blue-400" : "text-gray-400"} />
+      <span className="font-mono font-bold text-sm tracking-widest">{formatTime(seconds)}</span>
+    </div>
+  );
+};
+
+const WarmupScreen = ({ prompt, onComplete, onBack }: any) => {
+    const [seconds, setSeconds] = useState(0);
+    
+    useEffect(() => {
+        const interval = setInterval(() => setSeconds(s => s + 1), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 text-white flex flex-col">
+            <div className="p-4 flex justify-between items-center bg-white/10 backdrop-blur-md sticky top-0 z-10">
+                <button onClick={onBack} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"><ArrowLeft size={20}/></button>
+                <div className="font-mono font-bold text-xl flex items-center gap-2"><Flame className="animate-pulse"/> {formatTime(seconds)}</div>
+                <div className="w-10"></div>
+            </div>
+            <div className="flex-1 p-6 overflow-y-auto">
+                <h1 className="text-3xl font-black mb-2 uppercase italic tracking-tighter">Warm Up</h1>
+                <p className="text-white/80 text-sm mb-6 font-medium">Mach dich bereit für Höchstleistung.</p>
+                <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 shadow-xl">
+                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{prompt}</pre>
+                </div>
+            </div>
+            <div className="p-4 bg-white/10 backdrop-blur-md sticky bottom-0">
+                <button onClick={() => onComplete(seconds)} className="w-full bg-white text-orange-600 font-black py-4 rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-wide text-lg">
+                    <Dumbbell size={24} /> Training Starten
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const CooldownScreen = ({ prompt, onComplete }: any) => {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex flex-col">
+            <div className="p-6 flex-1 overflow-y-auto">
+                <div className="flex items-center gap-2 mb-2 opacity-80"><Wind size={24} /> <span className="font-bold tracking-widest uppercase text-sm">Recovery Mode</span></div>
+                <h1 className="text-4xl font-black mb-6 tracking-tighter">Cool Down</h1>
+                <div className="bg-white/10 rounded-3xl p-6 backdrop-blur-sm border border-white/20 shadow-2xl">
+                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">{prompt}</pre>
+                </div>
+            </div>
+            <div className="p-6 bg-white/10 backdrop-blur-md">
+                <button onClick={onComplete} className="w-full bg-white text-teal-600 font-black py-4 rounded-2xl shadow-xl hover:bg-teal-50 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">
+                    <CheckCircle2 size={24} /> Workout Speichern
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const PromptModal = ({ isOpen, onClose, title, icon: Icon, colorClass, currentPrompt, onSave, appendEquipment, equipment, appendHistory, history }: any) => {
+    const [text, setText] = useState(currentPrompt);
+    useEffect(() => { setText(currentPrompt); }, [currentPrompt]);
+    if (!isOpen) return null;
+    
+    const handleSave = () => {
+        // Hier wird nur der Text gespeichert (Regeln), nicht die generierten Daten!
+        onSave(text);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in">
+            <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95">
+                <div className={`${colorClass} p-4 text-white flex justify-between items-center rounded-t-3xl shrink-0`}>
+                    <div className="flex items-center gap-2"><Icon size={20} /><h2 className="font-bold text-lg">{title}</h2></div>
+                    <button onClick={onClose} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30"><X size={18}/></button>
+                </div>
+                <div className="p-4 overflow-y-auto flex-1">
+                    <p className="text-xs text-gray-500 mb-2 font-medium">Bearbeite hier die KI-Anweisungen (Prompt):</p>
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} className="w-full h-64 p-3 border border-gray-200 rounded-xl text-sm font-mono bg-gray-50 focus:bg-white focus:border-blue-500 outline-none resize-none shadow-inner" spellCheck={false} />
+                </div>
+                <div className="p-4 border-t border-gray-100 shrink-0"><button onClick={handleSave} className={`${colorClass} w-full py-3 rounded-xl text-white font-bold shadow-md active:scale-95 transition-transform`}>Speichern</button></div>
+            </div>
+        </div>
+    );
+};
+
+const EquipmentModal = ({ isOpen, onClose, equipment, onSave }: any) => {
+    const [items, setItems] = useState<string[]>([]);
+    const [newItem, setNewItem] = useState("");
+    useEffect(() => { if(equipment) setItems(equipment); }, [equipment]);
+    if (!isOpen) return null;
+    const add = () => { if (newItem.trim()) { setItems([...items, newItem.trim()]); setNewItem(""); }};
+    const remove = (idx: number) => { setItems(items.filter((_, i) => i !== idx)); };
+    const save = () => { onSave(items); onClose(); };
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col max-h-[80vh] shadow-2xl">
+                <div className="p-5 border-b border-gray-100"><h2 className="text-xl font-black text-gray-800">Mein Equipment</h2></div>
+                <div className="p-4 overflow-y-auto flex-1 space-y-2">{items.map((item, i) => (<div key={i} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100"><span className="font-medium text-gray-700">{item}</span><button onClick={() => remove(i)} className="text-gray-400 hover:text-red-500"><Trash2 size={18}/></button></div>))}</div>
+                <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl space-y-3">
+                    <div className="flex gap-2"><input value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="Neues Gerät (z.B. Kettlebell)" className="flex-1 border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-500" /><button onClick={add} className="bg-indigo-600 text-white p-2 rounded-xl"><PlusCircle size={20}/></button></div>
+                    <button onClick={save} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg">Speichern</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const PastePlanModal = ({ isOpen, onClose, onImport }: any) => {
+    const [text, setText] = useState("");
+    if (!isOpen) return null;
+    const handleImport = () => { try { const json = JSON.parse(text); onImport(json); onClose(); setText(""); } catch (e) { alert("Ungültiges JSON Format!"); }};
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+                <div className="bg-emerald-600 p-4 text-white flex justify-between items-center"><h2 className="font-bold text-lg flex items-center gap-2"><ClipboardCheck/> Plan importieren</h2><button onClick={onClose}><X/></button></div>
+                <div className="p-4"><p className="text-xs text-gray-500 mb-2">Füge hier den JSON-Code von ChatGPT ein:</p><textarea value={text} onChange={(e) => setText(e.target.value)} className="w-full h-40 p-3 border border-gray-200 rounded-xl text-xs font-mono bg-gray-50 outline-none resize-none" placeholder='[ { "id": 1, "title": "Push A", ... } ]'></textarea><button onClick={handleImport} className="w-full mt-4 bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md">Plan laden</button></div>
+            </div>
+        </div>
+    );
+};
+
+const ExitDialog = ({ isOpen, onSave, onDiscard, onCancel }: any) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-3xl w-full max-w-xs shadow-2xl p-6 animate-in zoom-in-95">
+                <div className="flex flex-col items-center text-center mb-6"><div className="w-12 h-12 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-3"><AlertTriangle size={24} /></div><h3 className="text-lg font-black text-gray-900">Training verlassen?</h3><p className="text-sm text-gray-500 mt-1">Dein Fortschritt wird lokal gespeichert.</p></div>
+                <div className="space-y-2"><button onClick={onSave} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Speichern & Beenden</button><button onClick={onDiscard} className="w-full bg-white border border-gray-200 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50">Verwerfen</button><button onClick={onCancel} className="w-full text-gray-400 font-bold py-2 text-sm">Abbrechen</button></div>
+            </div>
+        </div>
+    );
+};
+
+const CustomLogModal = ({ isOpen, onClose, onSave }: any) => {
+  const [title, setTitle] = useState("");
+  const [duration, setDuration] = useState("");
+  const [note, setNote] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    if (!title) return alert("Bitte gib einen Titel ein.");
+    onSave(title, duration, note);
+    setTitle("");
+    setDuration("");
+    setNote("");
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 animate-in zoom-in-95">
+        <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2"><PenTool size={20} className="text-blue-600"/> Freies Training</h2>
+        <div className="space-y-4">
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Aktivität</label><input type="text" placeholder="z.B. Laufen, Radfahren, Yoga" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Dauer (Minuten)</label><input type="text" placeholder="z.B. 40" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Details / Distanz</label><textarea placeholder="z.B. 8 km, lockeres Tempo" value={note} onChange={(e) => setNote(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:border-blue-500 outline-none h-24 resize-none"/></div>
+          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-transform">Speichern</button>
+          <button onClick={onClose} className="w-full text-gray-400 font-bold py-2 text-sm hover:text-gray-600">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ExerciseAnalysisModal = ({ isOpen, onClose, exerciseName, history }: any) => {
+  if (!isOpen || !exerciseName) return null;
+
+  const dataPoints = history.map((h: any) => {
+      if (!h.snapshot || !h.snapshot.exercises) return null;
+      const ex = h.snapshot.exercises.find((e: any) => e.name === exerciseName);
+      if (!ex) return null;
+      const bestWeight = ex.logs.reduce((max: number, log: any) => {
+          const w = parseFloat(log.weight) || 0;
+          return w > max && log.completed ? w : max;
+      }, 0);
+      if (bestWeight === 0) return null;
+      return { date: new Date(h.date), dateLabel: new Date(h.date).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }), weight: bestWeight };
+  }).filter(Boolean).reverse(); 
+
+  const hasData = dataPoints.length > 0;
+  const maxWeight = hasData ? Math.max(...dataPoints.map((d: any) => d.weight)) : 0;
+  const minWeight = hasData ? Math.min(...dataPoints.map((d: any) => d.weight)) : 0;
+  const chartHeight = 150; const chartWidth = 300; const padding = 20;
+  const getY = (weight: number) => { if (maxWeight === minWeight) return chartHeight / 2; return chartHeight - padding - ((weight - minWeight) / (maxWeight - minWeight)) * (chartHeight - (padding * 2)); };
+  const getPoints = () => { if (dataPoints.length === 1) return `0,${getY(dataPoints[0].weight)} ${chartWidth},${getY(dataPoints[0].weight)}`; return dataPoints.map((d: any, i: number) => { const x = (i / (dataPoints.length - 1)) * chartWidth; const y = getY(d.weight); return `${x},${y}`; }).join(" "); };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-0 overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white flex justify-between items-center shrink-0"><div><p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Fortschritts-Analyse</p><h2 className="text-xl font-black leading-none">{exerciseName}</h2></div><button onClick={onClose} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><X size={20}/></button></div>
+        <div className="p-5 overflow-y-auto">{!hasData ? (<div className="text-center text-gray-400 py-10"><BarChart3 className="mx-auto mb-2 opacity-50" size={48}/><p>Noch keine Daten für diese Übung.</p></div>) : (<><div className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100 shadow-inner relative"><div className="flex justify-between text-xs text-gray-400 font-bold mb-2"><span>{minWeight} kg</span><span>MAX: {maxWeight} kg</span></div><svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-32 overflow-visible"><line x1="0" y1={padding} x2={chartWidth} y2={padding} stroke="#e5e7eb" strokeDasharray="4"/><line x1="0" y1={chartHeight/2} x2={chartWidth} y2={chartHeight/2} stroke="#e5e7eb" strokeDasharray="4"/><line x1="0" y1={chartHeight-padding} x2={chartWidth} y2={chartHeight-padding} stroke="#e5e7eb" strokeDasharray="4"/><polyline fill="none" stroke="#2563eb" strokeWidth="3" points={getPoints()} strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-md"/>{dataPoints.map((d: any, i: number) => (<circle key={i} cx={(i / (dataPoints.length - 1 || 1)) * chartWidth} cy={getY(d.weight)} r="4" className="fill-white stroke-blue-600 stroke-2"/>))}</svg><div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider"><span>{dataPoints[0].dateLabel}</span><span>{dataPoints[dataPoints.length - 1].dateLabel}</span></div></div><h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-sm"><History size={16} className="text-blue-600"/> Historie (Best Sets)</h3><div className="space-y-2">{[...dataPoints].reverse().map((d: any, i: number) => (<div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-100 rounded-xl shadow-sm"><div className="flex items-center gap-3"><div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><Calendar size={14}/></div><span className="text-sm font-bold text-gray-700">{d.dateLabel}</span></div><span className="text-lg font-black text-gray-900">{d.weight} <span className="text-xs font-normal text-gray-400">kg</span></span></div>))}</div></>)}</div>
+      </div>
+    </div>
+  );
+};
+
+// --- HELPER FUNCTIONS (FALLBACK) ---
+const getStaticWarmup = (focus: string) => {
+  const focusLower = focus?.toLowerCase() || "";
+  if (focusLower.includes("leg") || focusLower.includes("bein") || focusLower.includes("unterkörper")) return `🔥 BEIN-FOKUS WARM-UP (RAMP)\n\n1. PULS (2 Min)\n• 1 Min Joggen\n• 1 Min Jumping Jacks\n\n2. MOBILISIERUNG\n• Leg Swings\n• Tiefe Hocke\n\n3. AKTIVIERUNG\n• Glute Bridges\n• Lunges`;
+  if (focusLower.includes("push") || focusLower.includes("pull") || focusLower.includes("upper") || focusLower.includes("oberkörper")) return `🔥 OBERKÖRPER WARM-UP (RAMP)\n\n1. PULS (2 Min)\n• Seilspringen\n• Armkreisen\n\n2. MOBILISIERUNG\n• Wall Slides\n• Cat-Cow\n• Thoracic Rotation\n\n3. AKTIVIERUNG\n• Band Pull-Aparts\n• Scapular Push Ups`;
+  return `🔥 GENERAL WARM-UP (RAMP)\n\n1. RAISE (2 Min)\n• High Knees\n• Hampelmann\n\n2. MOBILIZE\n• World's Greatest Stretch\n• Walkouts\n\n3. ACTIVATE\n• Air Squats\n• Plank`;
+};
+
+const getStaticCooldown = (focus: string) => {
+  const focusLower = focus?.toLowerCase() || "";
+  if (focusLower.includes("leg") || focusLower.includes("bein") || focusLower.includes("unterkörper")) return `❄️ BEIN-FOKUS COOL DOWN\n\n1. HÜFTE & GESÄSS\n• Pigeon Pose\n• Couch Stretch\n\n2. OBERSCHENKEL\n• Quad Stretch\n• Hamstring Stretch\n\n3. RELAX\n• Legs Up The Wall`;
+  if (focusLower.includes("push") || focusLower.includes("pull") || focusLower.includes("upper") || focusLower.includes("oberkörper")) return `❄️ OBERKÖRPER COOL DOWN\n\n1. BRUST & SCHULTERN\n• Doorway Stretch\n• Cross-Body Stretch\n\n2. RÜCKEN\n• Child's Pose\n• Lat Stretch\n\n3. NACKEN\n• Nacken-Neigen`;
+  return `❄️ GENERAL COOL DOWN\n\n1. POSTERIOR CHAIN\n• Forward Fold\n• Downward Dog\n\n2. SPINE & HIPS\n• Spinal Twist\n\n3. ATMEN\n• Corpse Pose`;
+};
+
+// --- MAIN APP ---
 
 function App() {
   const [activeTab, setActiveTab] = useState('training');
@@ -148,6 +370,7 @@ function App() {
   };
 
   const [activeWorkoutData, setActiveWorkoutData] = useState<any>(null);
+  
   const [isWarmupActive, setIsWarmupActive] = useState(false);
   const [isCooldownActive, setIsCooldownActive] = useState(false); 
   const [elapsedWarmupTime, setElapsedWarmupTime] = useState(0); 
@@ -156,6 +379,7 @@ function App() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
   const [showPastePlanModal, setShowPastePlanModal] = useState(false); 
+  
   const [activePromptModal, setActivePromptModal] = useState<string | null>(null); 
 
   const [restSeconds, setRestSeconds] = useState(0); 
@@ -164,6 +388,7 @@ function App() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-Resume
   useEffect(() => {
     const savedActiveState = localStorage.getItem('coachAndyActiveState');
     if (savedActiveState && !activeWorkoutData) {
@@ -353,6 +578,13 @@ function App() {
   const handleExitSave = () => { if (activeWorkoutData) saveToGlobalState(activeWorkoutData); setShowExitDialog(false); setSelectedWorkoutId(null); setActiveWorkoutData(null); setIsRestActive(false); setIsWarmupActive(false); setIsCooldownActive(false); localStorage.removeItem('coachAndyActiveState'); };
   const handleExitDiscard = () => { setShowExitDialog(false); setSelectedWorkoutId(null); setActiveWorkoutData(null); setIsRestActive(false); setIsWarmupActive(false); setIsCooldownActive(false); localStorage.removeItem('coachAndyActiveState'); };
   const handleExitCancel = () => setShowExitDialog(false);
+
+  const saveToGlobalState = (workoutData: any) => {
+    const newData = data.map((w: any) => w.id === workoutData.id ? workoutData : w);
+    setData(newData);
+    localStorage.setItem('coachAndyData', JSON.stringify(newData));
+    return newData;
+  };
 
   const handleDeleteHistoryEntry = (e: any, entryId: number) => {
     e.stopPropagation(); 
