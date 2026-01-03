@@ -5,7 +5,7 @@ import {
   Dumbbell, ArrowLeft, Save, Flame, Download, Upload, UserCircle, Trash2, History,
   CheckCircle2, CheckSquare, CalendarDays, Cloud, Database, Clock, Target, ChevronRight,
   FileText, Zap, Wind, Sparkles, ClipboardCheck, Package, Volume2, Trophy, AlertTriangle,
-  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool
+  Eye, X, BarChart3, FileSpreadsheet, PlusCircle, PenTool, PlayCircle, Youtube
 } from 'lucide-react';
 
 // Imports from new file structure
@@ -51,59 +51,17 @@ const CustomLogModal = ({ isOpen, onClose, onSave }: any) => {
         <h2 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
           <PenTool size={20} className="text-blue-600"/> Freies Training
         </h2>
-        
         <div className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">Aktivität</label>
-            <input 
-              type="text" 
-              placeholder="z.B. Laufen, Radfahren, Yoga" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"
-            />
-          </div>
-          
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">Dauer (Minuten)</label>
-            <input 
-              type="text" 
-              placeholder="z.B. 40" 
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">Details / Distanz</label>
-            <textarea 
-              placeholder="z.B. 8 km, lockeres Tempo" 
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:border-blue-500 outline-none h-24 resize-none"
-            />
-          </div>
-
-          <button 
-            onClick={handleSubmit}
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-transform"
-          >
-            Speichern
-          </button>
-          
-          <button 
-            onClick={onClose}
-            className="w-full text-gray-400 font-bold py-2 text-sm hover:text-gray-600"
-          >
-            Abbrechen
-          </button>
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Aktivität</label><input type="text" placeholder="z.B. Laufen, Radfahren, Yoga" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Dauer (Minuten)</label><input type="text" placeholder="z.B. 40" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-bold text-gray-900 focus:border-blue-500 outline-none"/></div>
+          <div><label className="text-xs font-bold text-gray-500 uppercase">Details / Distanz</label><textarea placeholder="z.B. 8 km, lockeres Tempo" value={note} onChange={(e) => setNote(e.target.value)} className="w-full border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:border-blue-500 outline-none h-24 resize-none"/></div>
+          <button onClick={handleSubmit} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-transform">Speichern</button>
+          <button onClick={onClose} className="w-full text-gray-400 font-bold py-2 text-sm hover:text-gray-600">Abbrechen</button>
         </div>
       </div>
     </div>
   );
 };
-
 
 // --- HELPER FUNCTIONS ---
 
@@ -135,11 +93,8 @@ function App() {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
   const [previewWorkout, setPreviewWorkout] = useState<any>(null);
 
-  // States
   const [currentWarmupRoutine, setCurrentWarmupRoutine] = useState("");
   const [currentCooldownRoutine, setCurrentCooldownRoutine] = useState("");
-  
-  // Custom Log Modal State
   const [showCustomLogModal, setShowCustomLogModal] = useState(false);
 
   const [data, setData] = useState(() => {
@@ -158,6 +113,50 @@ function App() {
 
   const isWorkoutCompleted = (workoutId: number) => {
     return history.some((entry: any) => entry.workoutId === workoutId);
+  };
+
+  // --- NEW: GHOST VALUE LOGIC ---
+  const getLastLogForExercise = (exerciseName: string) => {
+    // Finde alle Workouts im Verlauf, die diese Übung enthalten
+    const relevantEntries = history.filter(h => 
+      h.snapshot && h.snapshot.exercises && h.snapshot.exercises.some((ex: any) => ex.name === exerciseName)
+    );
+    
+    if (relevantEntries.length === 0) return null;
+    
+    // Nimm das neuste (History ist sortiert: neueste zuerst)
+    const lastEntry = relevantEntries[0];
+    const exerciseData = lastEntry.snapshot.exercises.find((ex: any) => ex.name === exerciseName);
+    
+    return exerciseData ? exerciseData.logs : null;
+  };
+
+  // --- NEW: STREAK CALCULATION ---
+  const getStreakStats = () => {
+    if (history.length === 0) return { currentStreak: 0, bestStreak: 0 };
+    
+    // Sortiere Tage unique
+    const uniqueDays = Array.from(new Set(history.map(h => new Date(h.date).toDateString()))).map(d => new Date(d).getTime()).sort((a,b) => b-a);
+    
+    let current = 0;
+    const today = new Date().setHours(0,0,0,0);
+    const yesterday = today - 86400000;
+
+    // Check ob heute oder gestern trainiert wurde für den Start
+    if (uniqueDays.length > 0) {
+        if (uniqueDays[0] === today || uniqueDays[0] === yesterday) {
+            current = 1;
+            for (let i = 0; i < uniqueDays.length - 1; i++) {
+                // Wenn der nächste Eintrag genau 1 Tag davor war
+                if (uniqueDays[i] - uniqueDays[i+1] <= 86400000 + 10000) { // Toleronz wegen Zeitumstellung etc
+                    current++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    return { currentStreak: current };
   };
 
   const [systemPrompt, setSystemPrompt] = useState(() => {
@@ -184,6 +183,30 @@ function App() {
       const savedEq = localStorage.getItem('coachAndyEquipment');
       return savedEq ? JSON.parse(savedEq) : DEFAULT_EQUIPMENT;
   });
+
+  const handleSaveCustomLog = (title: string, duration: string, note: string) => {
+      const newEntry = {
+          id: Date.now(),
+          workoutId: -1, 
+          workoutTitle: title,
+          date: new Date().toISOString(),
+          week: activeWeek,
+          type: "Custom",
+          snapshot: {
+              title: title,
+              focus: "Freies Training",
+              exercises: [
+                  {
+                      name: "Details / Notizen",
+                      logs: [{ weight: note, reps: duration + " Min", completed: true }]
+                  }
+              ]
+          }
+      };
+      const newHistory = [newEntry, ...history];
+      setHistory(newHistory);
+      localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
+  };
 
   const [activeWorkoutData, setActiveWorkoutData] = useState<any>(null);
   
@@ -326,31 +349,6 @@ function App() {
   const handleSavePlanPrompt = (newText: string) => { setPlanPrompt(newText); localStorage.setItem('coachAndyPlanPrompt', newText); };
   const handleSaveEquipment = (newEquipment: any[]) => { setEquipment(newEquipment); localStorage.setItem('coachAndyEquipment', JSON.stringify(newEquipment)); };
 
-  // --- SAVE CUSTOM WORKOUT ---
-  const handleSaveCustomLog = (title: string, duration: string, note: string) => {
-      const newEntry = {
-          id: Date.now(),
-          workoutId: -1, // ID für Custom Workouts
-          workoutTitle: title,
-          date: new Date().toISOString(),
-          week: activeWeek,
-          type: "Custom",
-          snapshot: {
-              title: title,
-              focus: "Freies Training",
-              exercises: [
-                  {
-                      name: "Details / Notizen",
-                      logs: [{ weight: note, reps: duration + " Min", completed: true }]
-                  }
-              ]
-          }
-      };
-      const newHistory = [newEntry, ...history];
-      setHistory(newHistory);
-      localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
-  };
-
   const startWorkout = (id: number) => {
     setPreviewWorkout(null);
     const originalWorkout = data.find((w: any) => w.id === id);
@@ -439,7 +437,7 @@ function App() {
       const newHistory = history.filter((entry: any) => entry.id !== entryId);
       setHistory(newHistory);
       localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
-      if (entryToDelete && entryToDelete.workoutId !== -1) { // Nur bei echten Workouts den Plan resetten
+      if (entryToDelete && entryToDelete.workoutId !== -1) {
          const workoutId = entryToDelete.workoutId;
          const newData = data.map((w: any) => {
             if (w.id === workoutId) {
@@ -584,22 +582,40 @@ function App() {
             <div className="mt-1"><h1 className="text-lg font-bold leading-tight">{activeWorkoutData.title}</h1><p className="text-blue-200 text-[10px] flex items-center gap-1"><Flame size={10} /> {activeWorkoutData.focus}</p></div>
           </div>
           <div className="p-4 space-y-3 max-w-md mx-auto">
-            {activeWorkoutData.exercises.map((ex: any, exerciseIndex: number) => (
+            {activeWorkoutData.exercises.map((ex: any, exerciseIndex: number) => {
+              // GHOST DATA
+              const lastLogs = getLastLogForExercise(ex.name);
+
+              return (
               <div key={exerciseIndex} className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100">
                 <div className="mb-2 border-b border-gray-100 pb-2">
-                  <div className="flex justify-between items-start"><h3 className="font-bold text-base text-gray-800 leading-tight">{ex.name}</h3><span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">RPE {ex.rpe}</span></div>
+                  <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                         <h3 className="font-bold text-base text-gray-800 leading-tight">{ex.name}</h3>
+                         {/* VIDEO LINK BUTTON */}
+                         <button onClick={() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise tutorial')}`, '_blank')} className="text-red-500 hover:text-red-700 transition-colors bg-red-50 p-1 rounded-full"><Youtube size={16} /></button>
+                      </div>
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">RPE {ex.rpe}</span>
+                  </div>
                   {ex.note && (<p className="text-[10px] text-blue-600 mt-1 font-medium bg-blue-50 inline-block px-2 py-0.5 rounded">💡 {ex.note}</p>)}
                 </div>
                 <div className="space-y-2">
                   {ex.logs.map((log: any, setIndex: number) => {
                     const isCompleted = log.completed;
                     const showRestTimerHere = isRestActive && activeRestContext.exerciseIndex === exerciseIndex && activeRestContext.setIndex === setIndex;
+                    
+                    // Ghost Values berechnen
+                    const ghostWeight = lastLogs && lastLogs[setIndex] ? lastLogs[setIndex].weight : '';
+                    const ghostReps = lastLogs && lastLogs[setIndex] ? lastLogs[setIndex].reps : '';
+                    const placeholderWeight = ghostWeight ? `Last: ${ghostWeight}` : 'kg';
+                    const placeholderReps = ghostReps ? `Last: ${ghostReps}` : ex.reps;
+
                     return (
                       <div key={setIndex}>
                         <div className={`flex items-center gap-2 p-1.5 rounded-2xl transition-all border ${isCompleted ? 'bg-white border-emerald-100' : 'bg-white border-transparent'}`}>
                           <div className="w-6 flex-shrink-0 flex items-center justify-center"><span className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ${isCompleted ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400 bg-gray-100'}`}>{setIndex + 1}</span></div>
-                          <div className="flex-1"><input type="number" placeholder="kg" value={log.weight} onChange={(e) => handleInputChange(exerciseIndex, setIndex, 'weight', e.target.value)} className={`w-full border rounded-xl px-3 py-2 text-base outline-none transition-all ${isCompleted ? 'bg-transparent border-transparent font-bold text-gray-800' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:bg-white font-bold text-gray-900'}`} disabled={isCompleted} /></div>
-                          <div className="flex-1"><input type="text" placeholder={ex.reps} value={log.reps} onChange={(e) => handleInputChange(exerciseIndex, setIndex, 'reps', e.target.value)} className={`w-full border rounded-xl px-3 py-2 text-base outline-none transition-all ${isCompleted ? 'bg-transparent border-transparent font-bold text-gray-800' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:bg-white font-bold text-gray-900'}`} disabled={isCompleted} /></div>
+                          <div className="flex-1"><input type="number" placeholder={placeholderWeight} value={log.weight} onChange={(e) => handleInputChange(exerciseIndex, setIndex, 'weight', e.target.value)} className={`w-full border rounded-xl px-3 py-2 text-base outline-none transition-all placeholder:text-gray-300 placeholder:text-xs ${isCompleted ? 'bg-transparent border-transparent font-bold text-gray-800' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:bg-white font-bold text-gray-900'}`} disabled={isCompleted} /></div>
+                          <div className="flex-1"><input type="text" placeholder={placeholderReps} value={log.reps} onChange={(e) => handleInputChange(exerciseIndex, setIndex, 'reps', e.target.value)} className={`w-full border rounded-xl px-3 py-2 text-base outline-none transition-all placeholder:text-gray-300 placeholder:text-xs ${isCompleted ? 'bg-transparent border-transparent font-bold text-gray-800' : 'bg-gray-50 border-gray-200 focus:border-blue-500 focus:bg-white font-bold text-gray-900'}`} disabled={isCompleted} /></div>
                           <button onClick={() => toggleSetComplete(exerciseIndex, setIndex)} className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ease-out ${isCompleted ? 'bg-emerald-500 shadow-md shadow-emerald-200 scale-100' : 'bg-gray-50 hover:bg-gray-100 active:scale-95'}`}><CheckCircle2 size={20} className={`transition-colors duration-300 ${isCompleted ? 'text-white' : 'text-gray-300'}`} strokeWidth={isCompleted ? 2.5 : 2} /></button>
                         </div>
                         {showRestTimerHere && (<div className="mt-1 mb-2 mx-1 bg-blue-50 border border-blue-100 rounded-lg p-2 flex items-center justify-center gap-2 animate-in slide-in-from-top-1 fade-in shadow-sm"><span className="text-[10px] font-bold uppercase tracking-wide text-blue-700 flex items-center gap-1"><Volume2 size={10} className="animate-pulse"/> Pause</span><span className="text-base font-mono font-bold text-blue-800">{formatTime(restSeconds)}</span></div>)}
@@ -608,7 +624,7 @@ function App() {
                   })}
                 </div>
               </div>
-            ))}
+            )})}
             <button onClick={handleFinishWorkout} className="w-full bg-blue-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-950 transition-transform active:scale-95 flex items-center justify-center gap-2 mt-6 mb-6"><Save size={18} /> Training beenden</button>
           </div>
         </div>
@@ -660,8 +676,8 @@ function App() {
               </header>
               <div className="p-6 -mt-8 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                     <div className="bg-white p-4 rounded-3xl shadow-md border border-gray-100 flex flex-col justify-center items-center"><Trophy className="text-yellow-500 mb-2 drop-shadow-sm" size={28} /><span className="text-3xl font-black text-gray-900 leading-none">{getStats().total}</span><span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Total</span></div>
-                     <div className="bg-white p-4 rounded-3xl shadow-md border border-gray-100 flex flex-col justify-center items-center"><CalendarDays className="text-emerald-500 mb-2 drop-shadow-sm" size={28} /><span className="text-3xl font-black text-gray-900 leading-none">{getStats().thisWeek}</span><span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Woche</span></div>
+                     <div className="bg-white p-4 rounded-3xl shadow-md border border-gray-100 flex flex-col justify-center items-center"><Trophy className="text-yellow-500 mb-2 drop-shadow-sm" size={28} /><span className="text-3xl font-black text-gray-900 leading-none">{getStats().total}</span><span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Total Workouts</span></div>
+                     <div className="bg-white p-4 rounded-3xl shadow-md border border-gray-100 flex flex-col justify-center items-center"><Flame className="text-orange-500 mb-2 drop-shadow-sm" size={28} /><span className="text-3xl font-black text-gray-900 leading-none">{getStreakStats().currentStreak}</span><span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1">Tage Streak</span></div>
                 </div>
                 <div className="bg-slate-900 rounded-3xl p-6 relative overflow-hidden text-white shadow-xl flex flex-col items-center justify-between gap-3">
                    <Cloud className="absolute -left-4 -bottom-4 text-white opacity-5 w-32 h-32" />
@@ -669,7 +685,6 @@ function App() {
                      <div><div className="flex items-center gap-2 mb-1"><Database size={20} className="text-blue-400" /><h3 className="font-bold text-lg">Cloud Sync</h3></div><p className="text-xs text-gray-400">Backup & Restore</p></div>
                      <div className="flex gap-2"><button onClick={handleExport} className="p-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/50" title="Backup Datei erstellen"><Download size={20} /></button><div className="relative"><input type="file" accept=".json" ref={fileInputRef} onChange={handleImport} className="hidden" /><button onClick={() => fileInputRef.current?.click()} className="p-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition-colors border border-gray-600" title="Datei importieren"><Upload size={20} /></button></div><button onClick={() => setShowPastePlanModal(true)} className="p-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/50" title="Plan Text einfügen"><ClipboardCheck size={20} /></button></div>
                    </div>
-                   {/* HIER IST DER NEUE BUTTON: */}
                    <button onClick={() => setShowCustomLogModal(true)} className="relative z-10 w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors border border-white/10">
                       <PlusCircle size={18} /> Freies Training eintragen
                    </button>
@@ -741,7 +756,7 @@ function App() {
                     {selectedHistoryEntry.snapshot?.exercises.map((ex: any, i: number) => (
                         <div key={i} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 opacity-90">
                             <h3 className="font-bold text-lg text-gray-800 border-b border-gray-100 pb-2 mb-2">{ex.name}</h3>
-                            <div className="space-y-2">{ex.logs.map((log: any, j: number) => (<div key={j} className="flex justify-between text-sm text-gray-600 bg-gray-50 p-2 rounded-lg"><span>Notiz {j+1}</span><span className="font-bold">{log.weight} • {log.reps}</span></div>))}</div>
+                            <div className="space-y-2">{ex.logs.map((log: any, j: number) => (<div key={j} className="flex justify-between text-sm text-gray-600 bg-gray-50 p-2 rounded-lg"><span>Satz {j+1}</span><span className="font-bold">{log.weight}kg x {log.reps}</span></div>))}</div>
                         </div>
                     ))}
                 </div>
