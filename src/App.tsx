@@ -23,7 +23,6 @@ import {
 
 // --- COMPONENTS ---
 
-// Timer der die Zeit an die App meldet (onTick)
 const WorkoutTimer = ({ transparent = false, initialTime = 0, onTick }: { transparent?: boolean, initialTime?: number, onTick?: (s: number) => void }) => {
   const [seconds, setSeconds] = useState(initialTime);
   const [isActive, setIsActive] = useState(true);
@@ -74,13 +73,11 @@ const WarmupScreen = ({ prompt, onComplete, onBack }: any) => {
     );
 };
 
-// CoolDownScreen jetzt MIT Timer oben rechts
 const CooldownScreen = ({ prompt, onComplete, initialTime, onTick }: any) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex flex-col">
             <div className="p-4 flex justify-between items-center bg-white/10 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-2 opacity-80"><Wind size={20} /> <span className="font-bold tracking-widest uppercase text-xs">Recovery</span></div>
-                {/* Timer läuft weiter */}
                 <WorkoutTimer transparent={true} initialTime={initialTime} onTick={onTick} />
             </div>
             <div className="p-6 flex-1 overflow-y-auto">
@@ -683,7 +680,7 @@ function App() {
       date: new Date().toISOString(),
       week: activeWorkoutData.week,
       type: activeWorkoutData.type,
-      totalDuration: formatTime(totalSeconds), // Gesamtzeit wird gespeichert
+      totalDuration: formatTime(totalSeconds), 
       snapshot: activeWorkoutData 
     };
     const newHistory = [newHistoryEntry, ...history];
