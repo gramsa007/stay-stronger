@@ -404,6 +404,18 @@ function App() {
   const [activeRestContext, setActiveRestContext] = useState({ exerciseIndex: -1, setIndex: -1 });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // --- HIER EINFÜGEN: Die fehlende Statistik-Funktion ---
+  const getStats = () => {
+    const total = history.length;
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
+    const monday = new Date(now.setDate(diff));
+    monday.setHours(0,0,0,0);
+    const thisWeek = history.filter((h: any) => new Date(h.date) >= monday).length;
+    return { total, thisWeek };
+  };
+  // -----------------------------------------------------
 
   useEffect(() => {
     const savedActiveState = localStorage.getItem('coachAndyActiveState');
