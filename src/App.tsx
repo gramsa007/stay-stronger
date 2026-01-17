@@ -368,7 +368,7 @@ const getStaticCooldown = (focus: string) => {
 
 // --- MAIN APP ---
 
-function App() {
+export default function App() {
   const [activeTab, setActiveTab] = useState('training');
   const [activeWeek, setActiveWeek] = useState(1);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
@@ -556,7 +556,7 @@ function App() {
         setRestSeconds((s) => {
             const next = s + 1;
             if (next > 0 && next % 30 === 0) {
-                playBeep(600, 'sine', 0.1, 0.05); 
+                playBeep(600, 'sine', 0.1); 
             }
             return next;
         });
@@ -639,7 +639,8 @@ function App() {
       setIsCooldownActive(false); 
       setTotalSeconds(0); 
       setIsRestActive(false);
-      playBeep(0, 'sine', 0.001, 0); 
+      
+      playBeep(0, 'sine', 0.001); 
     }
   };
 
@@ -820,6 +821,7 @@ function App() {
   );
 
   // --- VIEWS ---
+
   if (selectedWorkoutId && activeWorkoutData && isWarmupActive) {
       return (
           <>
@@ -869,10 +871,10 @@ function App() {
                 <div className="mb-2 border-b border-gray-100 pb-2">
                   <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
-                         <h3 onClick={() => setAnalysisExercise(ex.name)} className="font-bold text-base text-blue-700 cursor-pointer hover:underline decoration-blue-300 leading-tight flex items-center gap-1">
+                          <h3 onClick={() => setAnalysisExercise(ex.name)} className="font-bold text-base text-blue-700 cursor-pointer hover:underline decoration-blue-300 leading-tight flex items-center gap-1">
                             {ex.name} <TrendingUp size={14} className="text-blue-300"/>
-                         </h3>
-                         <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise tutorial')}`, '_blank'); }} className="text-red-500 hover:text-red-700 transition-colors bg-red-50 p-1 rounded-full"><Youtube size={16} /></button>
+                          </h3>
+                          <button onClick={(e) => { e.stopPropagation(); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' exercise tutorial')}`, '_blank'); }} className="text-red-500 hover:text-red-700 transition-colors bg-red-50 p-1 rounded-full"><Youtube size={16} /></button>
                       </div>
                       <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">RPE {ex.rpe}</span>
                   </div>
@@ -955,7 +957,7 @@ function App() {
                  <div className="flex justify-center items-center">
                      <div>
                         <h1 className="text-5xl font-black tracking-tighter text-white text-center">
-                           Coach Andy
+                           Stay Stronger
                         </h1>
                      </div>
                  </div>
@@ -1000,7 +1002,7 @@ function App() {
           {activeTab === 'training' && (
             <>
               <header className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 pb-6 shadow-lg text-white">
-                <div className="flex justify-between items-start mb-6"><div><h1 className="text-2xl font-black flex items-center gap-2 text-white">Coach Andy <Dumbbell className="text-blue-200 fill-current" size={24} /></h1><p className="text-blue-200 text-xs font-bold tracking-widest mt-1 uppercase">Periodisierung V1.0</p></div></div>
+                <div className="flex justify-between items-start mb-6"><div><h1 className="text-2xl font-black flex items-center gap-2 text-white">Stay Stronger <Dumbbell className="text-blue-200 fill-current" size={24} /></h1><p className="text-blue-200 text-xs font-bold tracking-widest mt-1 uppercase">Periodisierung V1.0</p></div></div>
                 <div className="flex gap-2 bg-blue-800/30 p-1 rounded-xl backdrop-blur-sm">{[1, 2, 3, 4].map((week) => (<button key={week} onClick={() => setActiveWeek(week)} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeWeek === week ? 'bg-white text-blue-700 shadow-md' : 'text-blue-100 hover:bg-white/10'}`}>W{week}</button>))}</div>
               </header>
               <main className="p-4 space-y-4 -mt-2">
@@ -1084,5 +1086,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
