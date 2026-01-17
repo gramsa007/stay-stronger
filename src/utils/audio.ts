@@ -1,32 +1,30 @@
 // src/utils/audio.ts
 
-export const playBeep = (freq = 440, type: OscillatorType = 'sine', duration = 0.1, vol = 0.1) => {
+// Einfache Audio-Funktion für Beeps
+export const playBeep = (frequency: number = 600, type: string = 'sine', volume: number = 0.1, duration: number = 0.1) => {
+    // Sicherheitscheck für Browser-Support
+    if (typeof window === 'undefined' || !window.AudioContext) return;
+  
     try {
-        // Cross-Browser Support
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioContext) return;
-        
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        
-        gain.gain.setValueAtTime(vol, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start();
-        osc.stop(ctx.currentTime + duration);
-
-        // Haptic Feedback (Vibration) falls unterstützt
-        if (navigator.vibrate) {
-            navigator.vibrate(200);
-        }
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+  
+      osc.type = type as any; 
+      osc.frequency.value = frequency;
+  
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+  
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      // Kurzes Fade-Out um Knacken zu verhindern
+      gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+  
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
     } catch (e) {
-        console.error("Audio Playback Error", e);
+      console.error("Audio Error:", e);
     }
-};
+  };
