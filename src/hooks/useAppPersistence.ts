@@ -1,111 +1,116 @@
 import { useState, useEffect } from 'react';
 
-const DEFAULT_PROMPTS = {
-  system: "Du bist Coach Andy, ein motivierender Fitness-Coach.",
-  warmup: "Gib mir ein 5-Minuten Warmup für Oberkörper.",
-  cooldown: "Gib mir ein 5-Minuten Cooldown.",
-  plan: "Erstelle einen Plan basierend auf..."
-};
-
-// WICHTIG: Das 'export const' macht den Hook für App.tsx verfügbar
 export const useAppPersistence = () => {
-  const [data, setData] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [equipment, setEquipment] = useState<string[]>(['Kurzhanteln', 'Bank']);
-  const [prompts, setPrompts] = useState(DEFAULT_PROMPTS);
-  
-  // FIX: Hier fehlten 'total' und 'thisWeek' für den DashboardScreen
-  const [stats, setStats] = useState({ 
-    name: 'Athlet', 
-    weight: 75, 
-    height: 180,
-    total: 0,     // Neu: Behebt den Dashboard-Fehler
-    thisWeek: 0   // Neu: Behebt den Dashboard-Fehler
+  const [data, setData] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('workout_data');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
   });
 
-  useEffect(() => {
-    const load = (key: string, setter: any, fallback: any) => {
-      const saved = localStorage.getItem('coach_andy_' + key);
-      if (saved) {
-        try {
-          setter(JSON.parse(saved));
-        } catch (e) {
-          console.error("Error loading " + key, e);
-        }
-      } else if (fallback) {
-        setter(fallback);
-      }
-    };
+  const [history, setHistory] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('workout_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
 
-    load('data', setData, []);
-    load('history', setHistory, []);
-    load('equipment', setEquipment, ['Hanteln', 'Matte']);
-    load('prompts', setPrompts, DEFAULT_PROMPTS);
-    // FIX: Fallback angepasst mit allen Feldern
-    load('stats', setStats, { name: 'User', weight: 0, height: 0, total: 0, thisWeek: 0 });
-  }, []);
+  const [equipment, setEquipment] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user_equipment');
+      return saved ? JSON.parse(saved) : { dumbbells: [], kettlebells: [], machines: [] };
+    } catch (e) { return { dumbbells: [], kettlebells: [], machines: [] }; }
+  });
 
-  // Update Stats automatisch basierend auf History
-  useEffect(() => {
-    if(history.length > 0) {
-        // Simple Logik: Gesamtzahl der Workouts setzen
-        const total = history.length;
-        // Wir behalten die alten Werte bei und aktualisieren nur total
-        setStats(prev => ({ ...prev, total })); 
-    }
-  }, [history]);
+  const [prompts, setPrompts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user_prompts');
+      return saved ? JSON.parse(saved) : {
+        system: "Du bist Coach Andy, ein erfahrener Fitness-Mentor.",
+        plan: "Erstelle einen Hyrox-fokussierten Trainingsplan.",
+        warmup: "Gib mir ein 5-minütiges dynamisches Warmup.",
+        cooldown: "Gib mir ein entspanntes Cooldown mit Stretching."
+      };
+    } catch (e) { return {}; }
+  });
 
-  const save = (key: string, value: any) => {
-    localStorage.setItem('coach_andy_' + key, JSON.stringify(value));
-  };
+  // NEU: Links Verwaltung mit Default-Werten
+  const [links, setLinks] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('user_links');
+      return saved ? JSON.parse(saved) : [
+        { id: 1, title: "Hyrox Weltrekord Lauf", channel: "Hunter McIntyre", url: "https://youtube.com", category: "Workout", type: "youtube", desc: "Analyse der Technik und Pacing." },
+        { id: 2, title: "10 Min Hüft-Mobility", channel: "Movement by David", url: "https://youtube.com", category: "Mobility", type: "youtube", desc: "Tägliche Routine für offene Hüften." },
+        { id: 3, title: "Kettlebell Flow Inspiration", channel: "kb_strength", url: "https://instagram.com", category: "Workout", type: "instagram", desc: "Complex für Grip-Kraft." },
+        { id: 4, title: "Mindset für Wettkämpfe", channel: "Coach Andy", url: "https://youtube.com", category: "Mindset", type: "youtube", desc: "Wie man Nervosität in Energie wandelt." },
+        { id: 5, title: "Schulter Pre-Hab", channel: "Squat University", url: "https://youtube.com", category: "Mobility", type: "youtube", desc: "Wichtig vor Overhead-Press." },
+        { id: 6, title: "Hyrox Regelwerk 2024", channel: "Hyrox Official", url: "https://hyrox.com", category: "Wissen", type: "web", desc: "Das offizielle Rulebook." }
+      ];
+    } catch (e) { return []; }
+  });
+
+  // Listener für Änderungen
+  useEffect(() => { localStorage.setItem('workout_data', JSON.stringify(data)); }, [data]);
+  useEffect(() => { localStorage.setItem('workout_history', JSON.stringify(history)); }, [history]);
+  useEffect(() => { localStorage.setItem('user_equipment', JSON.stringify(equipment)); }, [equipment]);
+  useEffect(() => { localStorage.setItem('user_prompts', JSON.stringify(prompts)); }, [prompts]);
+  useEffect(() => { localStorage.setItem('user_links', JSON.stringify(links)); }, [links]);
 
   const saveHistoryEntry = (entry: any) => {
-    const newHistory = [entry, ...history];
-    setHistory(newHistory);
-    save('history', newHistory);
+    setHistory((prev: any[]) => [entry, ...prev]);
   };
 
   const deleteHistoryEntry = (id: number) => {
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    save('history', newHistory);
+    setHistory((prev: any[]) => prev.filter(item => item.id !== id));
+  };
+
+  const updateEquipment = (newEquipment: any) => {
+    setEquipment(newEquipment);
   };
 
   const updatePrompts = (key: string, value: string) => {
-    const newPrompts = { ...prompts, [key]: value };
-    setPrompts(newPrompts);
-    save('prompts', newPrompts);
+    setPrompts((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const updateEquipment = (newEq: string[]) => {
-    setEquipment(newEq);
-    save('equipment', newEq);
+  // NEUE FUNKTIONEN FÜR LINKS
+  const addLink = (link: any) => {
+    setLinks((prev) => [{ ...link, id: Date.now() }, ...prev]);
   };
 
-  const importData = (jsonString: string) => {
-    try {
-      const imported = JSON.parse(jsonString);
-      if (imported.data) { setData(imported.data); save('data', imported.data); }
-      if (imported.history) { setHistory(imported.history); save('history', imported.history); }
-      if (imported.prompts) { setPrompts(imported.prompts); save('prompts', imported.prompts); }
-      if (imported.equipment) { setEquipment(imported.equipment); save('equipment', imported.equipment); }
-      alert("Import erfolgreich!");
-    } catch (e) {
-      alert("Fehler beim Importieren der Datei.");
+  const deleteLink = (id: number) => {
+    setLinks((prev) => prev.filter(l => l.id !== id));
+  };
+
+  const importData = (json: any) => {
+    if (!json) return;
+    const newData = json.data || json.workouts || (Array.isArray(json) ? json : null);
+    
+    if (newData && newData.length > 0) {
+      localStorage.setItem('workout_data', JSON.stringify(newData));
+      if (json.history) localStorage.setItem('workout_history', JSON.stringify(json.history));
+      if (json.prompts) localStorage.setItem('user_prompts', JSON.stringify(json.prompts));
+      if (json.equipment) localStorage.setItem('user_equipment', JSON.stringify(json.equipment));
+      if (json.links) localStorage.setItem('user_links', JSON.stringify(json.links));
+      window.location.reload();
+    } else {
+      alert("Fehler: Keine Trainingsdaten im Code gefunden. Suche nach 'data': [...]");
     }
   };
 
   const resetAll = () => {
-    localStorage.clear();
-    window.location.reload();
+    if (window.confirm("Wirklich alles löschen?")) {
+      localStorage.clear();
+      window.location.reload();
+    }
   };
 
   return {
-    data, setData: (d: any) => { setData(d); save('data', d); },
+    data, setData,
     history, saveHistoryEntry, deleteHistoryEntry,
     equipment, updateEquipment,
     prompts, updatePrompts,
-    stats, setStats: (s: any) => { setStats(s); save('stats', s); },
-    importData, resetAll
+    links, addLink, deleteLink, // Exportiere die neuen Funktionen
+    importData, resetAll,
+    stats: { totalWorkouts: history.length }
   };
 };

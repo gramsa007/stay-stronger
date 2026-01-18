@@ -4,95 +4,71 @@ export const useActiveSession = () => {
   const [phase, setPhase] = useState<'idle' | 'warmup' | 'training' | 'cooldown'>('idle');
   const [activeWorkoutData, setActiveWorkoutData] = useState<any>(null);
   const [totalSeconds, setTotalSeconds] = useState(0);
-  
-  // Rest Timer Logic
   const [isRestActive, setIsRestActive] = useState(false);
   const [restSeconds, setRestSeconds] = useState(0);
-  const [activeRestContext, setActiveRestContext] = useState<any>(null); // Welcher Satz hat Pause ausgelöst?
+  const [activeRestContext, setActiveRestContext] = useState<any>(null);
+  const timerRef = useRef<number | null>(null);
+  const restTimerRef = useRef<number | null>(null);
 
-  const timerRef = useRef<any>(null);
-
-  // Der Haupt-Timer der Session
   useEffect(() => {
-    if (phase !== 'idle') {
-      timerRef.current = setInterval(() => {
-        setTotalSeconds(s => s + 1);
-        
-        // Wenn Rest aktiv ist, diesen runterzählen
-        if (isRestActive) {
-          setRestSeconds(r => {
-            if (r <= 1) {
-              setIsRestActive(false); // Pause vorbei
-              return 0;
-            }
-            return r - 1;
-          });
-        }
+    if (phase !== 'idle' && phase !== 'cooldown') {
+      timerRef.current = window.setInterval(() => setTotalSeconds(s => s + 1), 1000);
+    } else if (timerRef.current) clearInterval(timerRef.current);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [phase]);
+
+  useEffect(() => {
+    if (isRestActive && restSeconds > 0) {
+      restTimerRef.current = window.setInterval(() => {
+        setRestSeconds(s => {
+          if (s <= 1) {
+            setIsRestActive(false);
+            if (restTimerRef.current) clearInterval(restTimerRef.current);
+            return 0;
+          }
+          return s - 1;
+        });
       }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
     }
-    return () => clearInterval(timerRef.current);
-  }, [phase, isRestActive]);
+    return () => { if (restTimerRef.current) clearInterval(restTimerRef.current); };
+  }, [isRestActive, restSeconds]);
 
   const startSession = (workout: any) => {
-    // Deep copy um State-Probleme zu vermeiden
-    const workoutCopy = JSON.parse(JSON.stringify(workout));
-    // Initialisiere logs falls nicht vorhanden
-    workoutCopy.exercises.forEach((ex: any) => {
-       if(!ex.logs || ex.logs.length === 0) {
-           // Erstelle leere Logs basierend auf Sets
-           ex.logs = Array(parseInt(ex.sets || 3)).fill({ weight: '', reps: '', completed: false });
-       }
-    });
-
-    setActiveWorkoutData(workoutCopy);
+    const initializedExercises = workout.exercises.map((ex: any) => ({
+      ...ex,
+      logs: Array.from({ length: parseInt(ex.sets) || 1 }, () => ({ weight: '', reps: ex.reps || '', completed: false }))
+    }));
+    setActiveWorkoutData({ ...workout, exercises: initializedExercises });
     setTotalSeconds(0);
-    setPhase('warmup'); // Startet immer mit Warmup, kann in App.tsx übersprungen werden wenn gewünscht
+    setPhase('warmup');
   };
 
-  const endSession = () => {
-    setPhase('idle');
-    setActiveWorkoutData(null);
-    setTotalSeconds(0);
+  const skipRest = () => {
     setIsRestActive(false);
+    setRestSeconds(0);
+    if (restTimerRef.current) clearInterval(restTimerRef.current);
   };
 
-  const handleInputChange = (exIdx: number, setIdx: number, field: string, val: string) => {
-    if (!activeWorkoutData) return;
+  const handleInputChange = (exIdx: number, setIdx: number, field: string, value: string) => {
     const newData = { ...activeWorkoutData };
-    newData.exercises[exIdx].logs[setIdx][field] = val;
+    newData.exercises[exIdx].logs[setIdx][field] = value;
     setActiveWorkoutData(newData);
   };
 
   const toggleSetComplete = (exIdx: number, setIdx: number) => {
-    if (!activeWorkoutData) return;
     const newData = { ...activeWorkoutData };
-    const currentStatus = newData.exercises[exIdx].logs[setIdx].completed;
-    
-    newData.exercises[exIdx].logs[setIdx].completed = !currentStatus;
-    setActiveWorkoutData(newData);
-
-    // Wenn wir den Satz auf "completed" setzen, starten wir den Rest Timer
-    if (!currentStatus) {
-      const defaultRest = 90; // Standard 90s Pause, könnte aus Übung kommen
-      setRestSeconds(defaultRest);
+    const currentSet = newData.exercises[exIdx].logs[setIdx];
+    currentSet.completed = !currentSet.completed;
+    if (currentSet.completed) {
+      const pauseTime = newData.exercises[exIdx].rest ? parseInt(newData.exercises[exIdx].rest) : 60;
+      setActiveRestContext({ exerciseName: newData.exercises[exIdx].name });
+      setRestSeconds(pauseTime);
       setIsRestActive(true);
-      setActiveRestContext({ exIdx, setIdx });
-    } else {
-      // Wenn wir "unchecken", brechen wir die Pause ab, falls es genau dieser Satz war
-      if (activeRestContext?.exIdx === exIdx && activeRestContext?.setIdx === setIdx) {
-        setIsRestActive(false);
-      }
-    }
+    } else setIsRestActive(false);
+    setActiveWorkoutData(newData);
   };
 
-  return {
-    phase, setPhase,
-    activeWorkoutData,
-    totalSeconds, setTotalSeconds,
-    startSession, endSession,
-    handleInputChange, toggleSetComplete,
-    isRestActive, restSeconds, activeRestContext
-  };
+  const endSession = () => { setPhase('idle'); setActiveWorkoutData(null); setTotalSeconds(0); setIsRestActive(false); };
+
+  return { phase, setPhase, activeWorkoutData, totalSeconds, setTotalSeconds, startSession, endSession, handleInputChange, toggleSetComplete, isRestActive, restSeconds, activeRestContext, skipRest };
 };

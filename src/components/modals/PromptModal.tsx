@@ -1,95 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, LucideIcon, RotateCcw } from 'lucide-react';
+import { X, Save, Sparkles, Zap, Wind, Coffee } from 'lucide-react';
 
 interface PromptModalProps {
+  type: 'system' | 'plan' | 'warmup' | 'cooldown';
+  value: string;
   onClose: () => void;
-  title: string;
-  icon: LucideIcon;
-  colorClass: string;
-  currentPrompt: string;
-  onSave: (val: string) => void;
-  appendEquipment?: boolean;
-  equipment?: any[];
-  appendHistory?: boolean;
-  history?: any[];
+  onSave: (newValue: string) => void;
 }
 
-export const PromptModal: React.FC<PromptModalProps> = ({
-  onClose, title, icon: Icon, colorClass, currentPrompt, onSave,
-  appendEquipment, equipment, appendHistory, history
-}) => {
-  const [value, setValue] = useState(currentPrompt);
+export const PromptModal: React.FC<PromptModalProps> = ({ type, value, onClose, onSave }) => {
+  const [text, setText] = useState(value || '');
 
-  useEffect(() => {
-    setValue(currentPrompt);
-  }, [currentPrompt]);
-
-  const handleSave = () => {
-    onSave(value);
-    onClose();
+  // Bezeichnungen und Icons je nach Typ
+  const config = {
+    system: { title: 'Coaching Philosophie', icon: <Sparkles size={20} />, color: 'bg-indigo-600' },
+    plan: { title: 'Plan Erstellung', icon: <Zap size={20} />, color: 'bg-blue-600' },
+    warmup: { title: 'Warmup Prompt', icon: <Wind size={20} />, color: 'bg-orange-600' },
+    cooldown: { title: 'Cooldown Prompt', icon: <Coffee size={20} />, color: 'bg-teal-600' }
   };
 
+  const current = config[type];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+      
+      {/* Modal Container */}
+      <div className="bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-800 flex flex-col max-h-[85vh] animate-in zoom-in-95 overflow-hidden">
         
         {/* Header */}
-        <div className={`p-6 ${colorClass} text-white flex justify-between items-center shrink-0`}>
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-              <Icon size={24} />
+            <div className={`p-2 ${current.color} rounded-xl text-white shadow-lg`}>
+              {current.icon}
             </div>
-            <h2 className="text-xl font-bold">{title}</h2>
+            <div>
+              <h2 className="text-xl font-black text-white tracking-tight italic uppercase">{current.title}</h2>
+              <p className="text-xs text-slate-400 font-medium tracking-wider">KI-Anweisungen bearbeiten</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-            <X size={24} />
+          <button onClick={onClose} className="p-2 bg-slate-800 text-slate-400 rounded-full hover:bg-slate-700 hover:text-white transition-colors">
+            <X size={20} />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto">
-          <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">
-            System Prompt (Anweisung an die KI)
-          </label>
-          
-          {/* HIER WAR DER FEHLER: Jetzt text-gray-900 (Dunkelgrau) statt text-white */}
-          <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="w-full h-80 p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none leading-relaxed shadow-inner"
-            placeholder="Gib hier deine Anweisungen für Coach Andy ein..."
-          />
-
-          {/* Info Badges */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            {appendEquipment && (
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100 flex items-center gap-1">
-                + Equipment wird automatisch angehängt
-              </span>
-            )}
-            {appendHistory && (
-              <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold border border-purple-100 flex items-center gap-1">
-                + Trainingsverlauf wird automatisch angehängt
-              </span>
-            )}
+          <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+              Prompt Text
+            </label>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="w-full h-64 bg-transparent text-slate-200 text-sm leading-relaxed outline-none resize-none custom-scrollbar"
+              placeholder="Gib hier die Anweisungen für die KI ein..."
+            />
           </div>
+          <p className="mt-4 text-[10px] text-slate-500 font-medium leading-relaxed px-2">
+            Hinweis: Diese Texte steuern, wie Coach Andy Trainingspläne erstellt und mit dir interagiert.
+          </p>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+        <div className="p-6 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-3">
           <button 
-            onClick={() => setValue(currentPrompt)} 
-            className="px-4 py-2 text-gray-500 font-bold text-sm hover:bg-gray-200 rounded-xl transition-colors flex items-center gap-2"
+            onClick={onClose} 
+            className="px-6 py-3 text-slate-400 font-bold text-sm hover:text-white transition-colors"
           >
-            <RotateCcw size={16} /> Reset
+            Abbrechen
           </button>
           <button 
-            onClick={handleSave} 
-            className={`px-6 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all flex items-center gap-2 ${colorClass}`}
+            onClick={() => onSave(text)}
+            className={`px-8 py-3 ${current.color} hover:opacity-90 text-white rounded-xl font-bold text-sm shadow-lg flex items-center gap-2 transition-transform active:scale-95`}
           >
             <Save size={18} /> Speichern
           </button>
         </div>
+
       </div>
     </div>
   );
