@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UserCircle, Dumbbell, History as HistoryIcon, FileText, 
-  Zap, Wind, Sparkles 
+  Zap, Wind, Sparkles, Link as LinkIcon 
 } from 'lucide-react';
 
 // Custom Hooks
 import { useAppPersistence } from './hooks/useAppPersistence';
 import { useActiveSession } from './hooks/useActiveSession';
-import { useWakeLock } from './hooks/useWakeLock'; // <--- NEU: Import
+import { useWakeLock } from './hooks/useWakeLock';
 
 // Utils
 import { getStreakStats, formatTime } from './utils/helpers';
-import { triggerWorkoutFinishConfetti } from './utils/confetti'; // <--- NEU: Import
+import { triggerWorkoutFinishConfetti } from './utils/confetti';
 
 // Screens
 import { ActiveWorkoutScreen } from './screens/ActiveWorkoutScreen';
@@ -20,6 +20,7 @@ import { CooldownScreen } from './screens/CooldownScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
+import { LinksScreen } from './screens/LinksScreen';
 
 // Modals
 import { ExerciseAnalysisModal } from './components/modals/ExerciseAnalysisModal';
@@ -31,7 +32,7 @@ import { ExitDialog } from './components/modals/ExitDialog';
 
 export default function App() {
   // --- UI STATE ---
-  const [activeTab, setActiveTab] = useState('training');
+  const [activeTab, setActiveTab] = useState('profile'); // Start auf Profil für Import-Check
   const [activeWeek, setActiveWeek] = useState(1);
   
   // Modal States
@@ -49,11 +50,9 @@ export default function App() {
   // --- HOOKS ---
   const persistence = useAppPersistence();
   const session = useActiveSession();
-  
-  // <--- NEU: Wake Lock Integration --->
   const { requestWakeLock, releaseWakeLock } = useWakeLock();
 
-  // Dieser Effekt hält den Bildschirm wach, solange eine Session läuft (Warmup, Training oder Cooldown)
+  // Wake Lock Logic
   useEffect(() => {
     if (session.phase !== 'idle') {
       requestWakeLock();
@@ -61,16 +60,14 @@ export default function App() {
       releaseWakeLock();
     }
   }, [session.phase]);
-  // <--- ENDE Wake Lock --->
 
-  // --- DERIVED DATA & HELPERS ---
+  // --- HELPER ---
   const visibleWorkouts = persistence.data.filter((w: any) => w.week === activeWeek);
 
   const isWorkoutCompleted = (workoutId: number) => {
     return persistence.history.some((entry: any) => entry.workoutId === workoutId);
   };
 
-  // Chart Data Calculation
   const calculateVolume = (snapshot: any) => {
       if (!snapshot || !snapshot.exercises) return 0;
       let vol = 0;
@@ -121,10 +118,7 @@ export default function App() {
       };
       
       persistence.saveHistoryEntry(newEntry);
-      
-      // <--- NEU: Visuelles Feedback beim Abschluss --->
       triggerWorkoutFinishConfetti();
-      
       session.endSession();
       setActiveTab('training');
   };
@@ -215,7 +209,7 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  // Helper für Modals
+  // Helper Components
   const ExitDialogComponent = (
     <ExitDialog 
         isOpen={showExitDialog} 
@@ -233,60 +227,126 @@ export default function App() {
      />
   );
 
-  // --- RENDER ---
-
-  // 1. ACTIVE SESSION OVERLAY
-  if (session.phase !== 'idle' && session.activeWorkoutData) {
+  // --- RENDER CONTENT SWITCHER ---
+  const renderContent = () => {
+    // A. Active Session Mode
+    if (session.phase !== 'idle' && session.activeWorkoutData) {
       if (session.phase === 'warmup') {
-          return (
-            <>
-              {ExitDialogComponent}
-              <WarmupScreen 
-                  prompt={persistence.prompts.warmup} 
-                  onComplete={(elapsed: number) => { session.setTotalSeconds(elapsed); session.setPhase('training'); }}
-                  onBack={handleBackRequest}
-              />
-            </>
-          );
+        return (
+          <WarmupScreen 
+              prompt={persistence.prompts.warmup} 
+              onComplete={(elapsed: number) => { session.setTotalSeconds(elapsed); session.setPhase('training'); }}
+              onBack={handleBackRequest}
+          />
+        );
       }
       if (session.phase === 'cooldown') {
-          return (
-            <>
-              {ExitDialogComponent}
-              <CooldownScreen 
-                prompt={persistence.prompts.cooldown} 
-                onComplete={handleFinishWorkout} 
-                initialTime={session.totalSeconds} 
-                onTick={session.setTotalSeconds} 
-              />
-            </>
-          );
+        return (
+          <CooldownScreen 
+            prompt={persistence.prompts.cooldown} 
+            onComplete={handleFinishWorkout} 
+            initialTime={session.totalSeconds} 
+            onTick={session.setTotalSeconds} 
+          />
+        );
       }
       // Training Phase
       return (
-          <ActiveWorkoutScreen 
-            activeWorkoutData={session.activeWorkoutData}
-            totalSeconds={session.totalSeconds}
-            setTotalSeconds={session.setTotalSeconds}
-            history={persistence.history}
-            onBackRequest={handleBackRequest}
-            onFinishWorkout={() => session.setPhase('cooldown')}
-            onAnalysisRequest={(name: string) => setAnalysisExercise(name)}
-            handleInputChange={session.handleInputChange}
-            toggleSetComplete={session.toggleSetComplete}
-            isRestActive={session.isRestActive}
-            restSeconds={session.restSeconds}
-            activeRestContext={session.activeRestContext}
-            ExitDialogComponent={ExitDialogComponent}
-            AnalysisModalComponent={AnalysisModalComponent}
-          />
+        <ActiveWorkoutScreen 
+          activeWorkoutData={session.activeWorkoutData}
+          totalSeconds={session.totalSeconds}
+          setTotalSeconds={session.setTotalSeconds}
+          history={persistence.history}
+          onBackRequest={handleBackRequest}
+          onFinishWorkout={() => session.setPhase('cooldown')}
+          onAnalysisRequest={(name: string) => setAnalysisExercise(name)}
+          handleInputChange={session.handleInputChange}
+          toggleSetComplete={session.toggleSetComplete}
+          isRestActive={session.isRestActive}
+          restSeconds={session.restSeconds}
+          activeRestContext={session.activeRestContext}
+          ExitDialogComponent={ExitDialogComponent}
+          AnalysisModalComponent={AnalysisModalComponent}
+        />
       );
-  }
+    }
 
-  // 2. MAIN APP
+    // B. Dashboard / Tabs Mode
+    return (
+      <div className="pb-24 min-h-screen">
+          {activeTab === 'profile' && (
+            <DashboardScreen 
+                stats={persistence.stats}
+                streak={getStreakStats(persistence.history)}
+                onExport={handleExportJSON}
+                // HIER WURDE DER FEHLER GEFIXT:
+                onImport={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      try {
+                        const json = JSON.parse(event.target?.result as string);
+                        if(json.data || json.history) {
+                            persistence.importData(json);
+                            alert("Backup erfolgreich wiederhergestellt! 🚀");
+                        } else {
+                            alert("Formatfehler: Das ist keine gültige Coach Andy Datei.");
+                        }
+                      } catch (err) {
+                        alert("Fehler beim Lesen der Datei.");
+                      }
+                    };
+                    reader.readAsText(file);
+                  }
+                }}
+                onPastePlan={() => setShowPastePlanModal(true)}
+                onOpenCustomLog={() => setShowCustomLogModal(true)}
+                onOpenPlanPrompt={() => setActivePromptModal('plan')}
+                onOpenEquipment={() => setShowEquipmentModal(true)}
+                onOpenSystemPrompt={() => setActivePromptModal('system')}
+                onOpenWarmupPrompt={() => setActivePromptModal('warmup')}
+                onOpenCooldownPrompt={() => setActivePromptModal('cooldown')}
+                onClearPlan={() => { /* Alert Logic handled in DashboardScreen */ persistence.setData([]); }}
+                onReset={() => { /* Alert Logic handled in DashboardScreen */ persistence.resetAll(); }}
+            />
+          )}
+
+          {activeTab === 'training' && (
+            <PlanScreen 
+                activeWeek={activeWeek}
+                setActiveWeek={setActiveWeek}
+                workouts={visibleWorkouts}
+                isWorkoutCompleted={isWorkoutCompleted}
+                onStartWorkout={handleStartWorkout}
+                onPreviewWorkout={setPreviewWorkout}
+            />
+          )}
+
+          {activeTab === 'links' && (
+            <LinksScreen />
+          )}
+
+          {activeTab === 'history' && (
+            <HistoryScreen 
+                history={persistence.history}
+                selectedEntry={selectedHistoryEntry}
+                chartData={chartData}
+                onSelectEntry={setSelectedHistoryEntry}
+                onClearSelection={() => setSelectedHistoryEntry(null)}
+                onDeleteEntry={(e: any, id: number) => persistence.deleteHistoryEntry(id)}
+                onExportCSV={handleCSVExport}
+                onAnalysisRequest={setAnalysisExercise}
+            />
+          )}
+      </div>
+    );
+  };
+
+  // --- MAIN RENDER ---
   return (
     <div className="min-h-screen bg-neutral-900 flex justify-center font-sans">
-      <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
         
         {/* GLOBAL MODALS */}
         {showCustomLogModal && <CustomLogModal onClose={() => setShowCustomLogModal(false)} onSave={handleSaveCustomLog} />}
@@ -301,7 +361,7 @@ export default function App() {
         {activePromptModal === 'cooldown' && <PromptModal onClose={() => setActivePromptModal(null)} title="Cool Down Prompt" icon={Wind} colorClass="bg-gradient-to-r from-teal-500 to-cyan-600" currentPrompt={persistence.prompts.cooldown} onSave={(val) => persistence.updatePrompts('cooldown', val)} />}
         {activePromptModal === 'plan' && <PromptModal onClose={() => setActivePromptModal(null)} title="Plan erstellen" icon={Sparkles} colorClass="bg-gradient-to-r from-blue-600 to-indigo-600" currentPrompt={persistence.prompts.plan} onSave={(val) => persistence.updatePrompts('plan', val)} appendEquipment={true} equipment={persistence.equipment} appendHistory={true} history={persistence.history} />}
 
-        {/* WORKOUT PREVIEW (Inline Modal) */}
+        {/* WORKOUT PREVIEW */}
         {previewWorkout && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
               <div className="bg-white rounded-3xl w-full max-w-sm max-h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95">
@@ -325,56 +385,26 @@ export default function App() {
             </div>
         )}
 
-        <div className="pb-24 min-h-screen">
-          {activeTab === 'profile' && (
-            <DashboardScreen 
-                stats={persistence.stats}
-                streak={getStreakStats(persistence.history)}
-                onExport={handleExportJSON}
-                onImport={(e: any) => { /* File handling logic */ }}
-                onPastePlan={() => setShowPastePlanModal(true)}
-                onOpenCustomLog={() => setShowCustomLogModal(true)}
-                onOpenPlanPrompt={() => setActivePromptModal('plan')}
-                onOpenEquipment={() => setShowEquipmentModal(true)}
-                onOpenSystemPrompt={() => setActivePromptModal('system')}
-                onOpenWarmupPrompt={() => setActivePromptModal('warmup')}
-                onOpenCooldownPrompt={() => setActivePromptModal('cooldown')}
-                onClearPlan={() => { if(confirm("Plan löschen?")) persistence.setData([]); }}
-                onReset={() => { if(confirm("Alles zurücksetzen?")) persistence.resetAll(); }}
-            />
-          )}
-
-          {activeTab === 'training' && (
-            <PlanScreen 
-                activeWeek={activeWeek}
-                setActiveWeek={setActiveWeek}
-                workouts={visibleWorkouts}
-                isWorkoutCompleted={isWorkoutCompleted}
-                onStartWorkout={handleStartWorkout}
-                onPreviewWorkout={setPreviewWorkout}
-            />
-          )}
-
-          {activeTab === 'history' && (
-            <HistoryScreen 
-                history={persistence.history}
-                selectedEntry={selectedHistoryEntry}
-                chartData={chartData}
-                onSelectEntry={setSelectedHistoryEntry}
-                onClearSelection={() => setSelectedHistoryEntry(null)}
-                onDeleteEntry={(id: number) => persistence.deleteHistoryEntry(id)}
-                onExportCSV={handleCSVExport}
-                onAnalysisRequest={setAnalysisExercise}
-            />
-          )}
-        </div>
+        {/* DYNAMIC CONTENT */}
+        {renderContent()}
 
         {/* BOTTOM NAV */}
-        <div className="fixed bottom-0 w-full max-w-md mx-auto bg-white border-t border-gray-200 px-6 py-2 pb-6 flex justify-between items-center text-xs font-medium z-20 left-0 right-0">
-          <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'profile' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}><UserCircle className="w-6 h-6" /><span>Profil</span></button>
-          <button onClick={() => setActiveTab('training')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'training' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}><Dumbbell className="w-6 h-6" /><span>Training</span></button>
-          <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'history' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}><HistoryIcon className="w-6 h-6" /><span>Verlauf</span></button>
-        </div>
+        {session.phase === 'idle' && (
+          <div className="fixed bottom-0 w-full max-w-md mx-auto bg-white border-t border-gray-200 px-2 py-2 pb-6 flex justify-between items-center text-xs font-medium z-20 left-0 right-0">
+            <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'profile' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}>
+              <UserCircle className="w-6 h-6" /><span>Profil</span>
+            </button>
+            <button onClick={() => setActiveTab('training')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'training' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}>
+              <Dumbbell className="w-6 h-6" /><span>Training</span>
+            </button>
+            <button onClick={() => setActiveTab('links')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'links' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}>
+              <LinkIcon className="w-6 h-6" /><span>Links</span>
+            </button>
+            <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === 'history' ? 'text-blue-800' : 'text-gray-400 hover:text-gray-600'}`}>
+              <HistoryIcon className="w-6 h-6" /><span>Verlauf</span>
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

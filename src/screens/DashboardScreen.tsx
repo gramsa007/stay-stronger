@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   Settings, Download, Upload, Trash2, 
-  FileText, Zap, Wind, Sparkles, Database, Clipboard 
+  FileText, Zap, Wind, Sparkles, Database, ClipboardCheck, 
+  Trophy, Activity, Plus, CalendarOff
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -25,89 +26,165 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
   onOpenPlanPrompt, onOpenEquipment, onOpenSystemPrompt,
   onOpenWarmupPrompt, onOpenCooldownPrompt, onClearPlan, onReset
 }) => {
+  
+  // Referenz für den versteckten Datei-Upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const StatCard = ({ label, value, sub }: any) => (
-    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
-      <span className="text-3xl font-bold text-gray-800">{value}</span>
-      <span className="text-xs text-gray-500 uppercase tracking-wide mt-1">{label}</span>
-      {sub && <span className="text-xs text-green-600 font-medium mt-1">{sub}</span>}
-    </div>
-  );
+  // Wrapper für Sicherheitsabfragen (falls in App.tsx nicht vorhanden, hier doppelt hält besser)
+  const handleSafeReset = () => {
+    if (window.confirm("Bist du sicher? Damit wird die GESAMTE App (Verlauf, Einstellungen, Plan) zurückgesetzt.")) {
+      onReset();
+    }
+  };
 
-  const ActionButton = ({ icon: Icon, label, onClick, color = "text-gray-700", bg = "bg-white" }: any) => (
-    <button 
-      onClick={onClick}
-      className={`${bg} p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 transition-transform active:scale-95`}
-    >
-      <Icon className={`w-6 h-6 ${color}`} />
-      <span className="text-xs font-medium text-gray-600">{label}</span>
-    </button>
-  );
+  const handleSafeClearPlan = () => {
+    if (window.confirm("Nur den aktuellen Trainingsplan löschen? Dein Verlauf bleibt erhalten.")) {
+      onClearPlan();
+    }
+  };
 
   return (
-    <div className="p-6 space-y-8 pb-32">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-          {stats.name.charAt(0)}
+    <div className="flex flex-col min-h-screen bg-gray-50 pb-32">
+      
+      {/* --- HEADER (Dark Blue) --- */}
+      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 pt-10 pb-12 px-6 rounded-b-[2.5rem] shadow-xl z-10 text-center relative overflow-hidden">
+        {/* Abstract Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        
+        <h1 className="text-3xl font-black text-white italic tracking-tighter mb-1 uppercase relative z-10">
+          STAY STRONGER
+        </h1>
+        <div className="h-1 w-12 bg-blue-500 mx-auto rounded-full mt-2 relative z-10 opacity-50" />
+      </div>
+
+      {/* --- STATS OVERLAY --- */}
+      <div className="px-6 -mt-8 grid grid-cols-2 gap-3 z-20">
+        <div className="bg-white p-4 rounded-2xl shadow-lg flex items-center gap-3 border border-gray-50">
+          <div className="bg-amber-50 text-amber-600 p-3 rounded-full">
+            <Trophy size={20} />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-gray-900">{streak.currentStreak}</span>
+            <span className="text-xs text-gray-500 font-medium">Tage Streak</span>
+          </div>
         </div>
+        <div className="bg-white p-4 rounded-2xl shadow-lg flex items-center gap-3 border border-gray-50">
+          <div className="bg-blue-50 text-blue-600 p-3 rounded-full">
+            <Activity size={20} />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-gray-900">{stats.total}</span>
+            <span className="text-xs text-gray-500 font-medium">Workouts</span>
+          </div>
+        </div>
+      </div>
+
+      {/* --- CLOUD SYNC CARD --- */}
+      <div className="px-6 mt-6">
+        <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200 relative overflow-hidden">
+          {/* Background Glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          
+          <div className="flex justify-between items-start mb-6 relative z-10">
+            <div>
+              <div className="flex items-center gap-2">
+                <Database size={18} className="text-blue-400" />
+                <h2 className="text-lg font-bold">Cloud Sync</h2>
+              </div>
+              <p className="text-xs text-slate-400 font-medium">Backup & Restore</p>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="flex gap-2">
+              <button 
+                onClick={onExport}
+                className="w-10 h-10 bg-blue-600 hover:bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/50 transition-transform active:scale-95"
+              >
+                <Download size={18} />
+              </button>
+
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-900/50 transition-transform active:scale-95"
+              >
+                <Upload size={18} />
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={onImport} 
+                className="hidden" 
+                accept=".json"
+              />
+
+              <button 
+                onClick={onPastePlan}
+                className="w-10 h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-900/50 transition-transform active:scale-95"
+              >
+                <ClipboardCheck size={18} />
+              </button>
+            </div>
+          </div>
+
+          <button 
+            onClick={onOpenCustomLog}
+            className="w-full py-4 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-2xl flex items-center justify-center gap-3 font-bold text-sm transition-all active:scale-[0.98] group relative z-10"
+          >
+            <div className="w-6 h-6 rounded-full border-2 border-slate-500 flex items-center justify-center group-hover:border-blue-500 group-hover:text-blue-500 transition-colors">
+              <Plus size={14} />
+            </div>
+            Freies Training eintragen
+          </button>
+        </div>
+      </div>
+
+      {/* --- RESTLICHE SECTIONS --- */}
+      <div className="px-6 mt-6 space-y-6">
+        
+        {/* Coach AI Config */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hey, {stats.name} 👋</h1>
-          <p className="text-gray-500 text-sm">Bereit für das nächste Level?</p>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Coach KI Setup</h3>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            <button onClick={onOpenSystemPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors">
+              <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><Database size={18}/></div>
+              <span className="flex-1 text-sm font-bold text-gray-700">System Prompt</span>
+            </button>
+            <button onClick={onOpenPlanPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Sparkles size={18}/></div>
+              <span className="flex-1 text-sm font-bold text-gray-700">Plan Erstellung</span>
+            </button>
+            <button onClick={onOpenWarmupPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors">
+              <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><Zap size={18}/></div>
+              <span className="flex-1 text-sm font-bold text-gray-700">Warmup Prompt</span>
+            </button>
+            <button onClick={onOpenCooldownPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left transition-colors">
+              <div className="p-2 bg-teal-50 text-teal-600 rounded-lg"><Wind size={18}/></div>
+              <span className="flex-1 text-sm font-bold text-gray-700">Cooldown Prompt</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <StatCard label="Workouts" value={stats.total} sub="Total" />
-        <StatCard label="Streak" value={streak.currentStreak} sub={`Best: ${streak.bestStreak}`} />
-        <StatCard label="Gewicht" value={stats.weight + " kg"} />
-        <StatCard label="Größe" value={stats.height + " cm"} />
-      </div>
+        {/* Settings & Danger Zone */}
+        <div>
+           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Verwaltung</h3>
+           <div className="grid grid-cols-2 gap-3">
+             {/* Equipment (Full Width oben oder im Grid) -> Grid sieht besser aus wenn wir 3 haben? Machen wir 3 */}
+             <button onClick={onOpenEquipment} className="col-span-2 bg-white border border-gray-200 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-gray-600 hover:bg-gray-50">
+                <Settings size={16} /> Equipment Einstellungen
+             </button>
+             
+             {/* Plan löschen */}
+             <button onClick={handleSafeClearPlan} className="bg-orange-50 border border-orange-100 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-orange-600 hover:bg-orange-100 transition-colors">
+                <CalendarOff size={16} /> Plan löschen
+             </button>
 
-      {/* Quick Actions */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 ml-1">Aktionen</h3>
-        <div className="grid grid-cols-3 gap-3">
-          <ActionButton icon={Clipboard} label="Plan Import" onClick={onPastePlan} color="text-blue-600" />
-          <ActionButton icon={FileText} label="Loggen" onClick={onOpenCustomLog} color="text-green-600" />
-          <ActionButton icon={Settings} label="Equipment" onClick={onOpenEquipment} color="text-gray-600" />
+             {/* App Reset */}
+             <button onClick={handleSafeReset} className="bg-red-50 border border-red-100 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-red-600 hover:bg-red-100 transition-colors">
+                <Trash2 size={16} /> App Reset
+             </button>
+           </div>
         </div>
-      </div>
 
-      {/* AI Settings */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 ml-1">Coach KI Konfiguration</h3>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
-          <button onClick={onOpenSystemPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left">
-            <Database className="w-5 h-5 text-indigo-500" /> <span className="flex-1 text-sm font-medium">System Prompt</span>
-          </button>
-          <button onClick={onOpenPlanPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left">
-            <Sparkles className="w-5 h-5 text-blue-500" /> <span className="flex-1 text-sm font-medium">Plan Erstellung</span>
-          </button>
-          <button onClick={onOpenWarmupPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left">
-            <Zap className="w-5 h-5 text-orange-500" /> <span className="flex-1 text-sm font-medium">Warmup</span>
-          </button>
-          <button onClick={onOpenCooldownPrompt} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left">
-            <Wind className="w-5 h-5 text-teal-500" /> <span className="flex-1 text-sm font-medium">Cooldown</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Data Management */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 ml-1">Daten</h3>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100">
-          <button onClick={onExport} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left">
-            <Download className="w-5 h-5 text-gray-500" /> <span className="flex-1 text-sm font-medium">Backup speichern (JSON)</span>
-          </button>
-          <button onClick={onClearPlan} className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-left text-red-600">
-            <Trash2 className="w-5 h-5" /> <span className="flex-1 text-sm font-medium">Aktuellen Plan löschen</span>
-          </button>
-          <button onClick={onReset} className="w-full p-4 flex items-center gap-3 hover:bg-red-50 text-left text-red-600 bg-red-50/50">
-            <Trash2 className="w-5 h-5" /> <span className="flex-1 text-sm font-medium">App komplett zurücksetzen</span>
-          </button>
-        </div>
       </div>
     </div>
   );
