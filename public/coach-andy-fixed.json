@@ -1,0 +1,437 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "week": 1,
+      "title": "Hyrox Foundation: Barbell Strength",
+      "type": "strength",
+      "duration": "60 Min",
+      "focus": "Maximalkraft & Core Stabilität",
+      "color": "border-blue-500 text-blue-600",
+      "badgeColor": "bg-blue-100 text-blue-700",
+      "exercises": [
+        { "name": "Back Squat (Langhantel)", "sets": 4, "reps": "6-8", "rpe": "8", "note": "Kontrollierte Tiefe, Fokus auf Power aus dem Stand", "logs": [{ "weight": "30", "reps": "10", "completed": true }, { "weight": "30", "reps": "10", "completed": true }, { "weight": "35", "reps": "12", "completed": true }, { "weight": "", "reps": "", "completed": false }] },
+        { "name": "Strict Overhead Press (LH)", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Kein Schwung aus den Beinen nutzen", "logs": [{ "weight": "30", "reps": "12", "completed": true }, { "weight": "35", "reps": "12", "completed": true }, { "weight": "35", "reps": "12", "completed": true }] },
+        { "name": "Klimmzüge (Unterstützt mit Theraband)", "sets": 3, "reps": "Max-1", "rpe": "9", "note": "Volle Range of Motion", "logs": [{ "weight": "0", "reps": "3", "completed": true }, { "weight": "0", "reps": "2", "completed": true }, { "weight": "0", "reps": "2", "completed": true }] },
+        { "name": "Plank mit Hantelscheibe (20kg)", "sets": 3, "reps": "45 Sek", "rpe": "7", "note": "Gewicht auf den unteren Rücken legen lassen", "logs": [{ "weight": "10", "reps": "45", "completed": true }, { "weight": "10", "reps": "45", "completed": true }, { "weight": "5", "reps": "30", "completed": true }] }
+      ]
+    },
+    {
+      "id": 2,
+      "week": 1,
+      "title": "Hyrox Engine: KB Circuit",
+      "type": "circuit",
+      "duration": "45 Min",
+      "focus": "Kraftausdauer & Herzfrequenz-Management",
+      "color": "border-green-500 text-green-600",
+      "badgeColor": "bg-green-100 text-green-700",
+      "exercises": [
+        { "name": "KB Goblet Squats (12kg)", "sets": 4, "reps": "20", "rpe": "7", "note": "Kurze Pause (30 Sek) zwischen den Sätzen", "logs": [{ "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }] },
+        { "name": "KB Swings (12kg)", "sets": 4, "reps": "25", "rpe": "8", "note": "Explosiver Hüftstreckung", "logs": [{ "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }] },
+        { "name": "Walking Lunges (Bodyweight)", "sets": 4, "reps": "30", "rpe": "7", "note": "Saubere Kniegelenksführung", "logs": [{ "weight": "0", "reps": "20", "completed": true }, { "weight": "0", "reps": "25", "completed": true }, { "weight": "2", "reps": "25", "completed": true }, { "weight": "4", "reps": "10", "completed": true }] },
+        { "name": "Burpees", "sets": 4, "reps": "12", "rpe": "9", "note": "Simulation der Hyrox-Transition", "logs": [{ "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "10", "completed": true }, { "weight": "", "reps": "", "completed": false }] }
+      ]
+    },
+    {
+      "id": 3,
+      "week": 1,
+      "title": "Functional Capacity: Grip & Core",
+      "type": "strength",
+      "duration": "50 Min",
+      "focus": "Griffkraft Progression & Pull-Stärke",
+      "color": "border-purple-500 text-purple-600",
+      "badgeColor": "bg-purple-100 text-purple-700",
+      "exercises": [
+        { "name": "Farmer's Walk (2x 20kg Scheiben)", "sets": 4, "reps": "40m", "rpe": "9", "note": "Scheiben im Zangengriff halten (Pinch Grip)", "logs": [{ "weight": "20", "reps": "25", "completed": true }, { "weight": "20", "reps": "30", "completed": true }, { "weight": "20", "reps": "35", "completed": true }, { "weight": "20", "reps": "38", "completed": true }] },
+        { "name": "Barbell Row (Langhantel)", "sets": 3, "reps": "10-12", "rpe": "8", "note": "Oberkörper stabil halten", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }, { "weight": "45", "reps": "12", "completed": true }] },
+        { "name": "Hanging Knee Raises", "sets": 3, "reps": "15", "rpe": "7", "note": "An der Klimmzugstange hängen", "logs": [{ "weight": "0", "reps": "12", "completed": true }, { "weight": "0", "reps": "12", "completed": true }, { "weight": "0", "reps": "9", "completed": true }] },
+        { "name": "Deadlift (Langhantel)", "sets": 3, "reps": "8", "rpe": "7", "note": "Technikfokus, moderates Gewicht", "logs": [{ "weight": "30", "reps": "12", "completed": true }, { "weight": "30", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }] }
+      ]
+    },
+    {
+      "id": 4,
+      "week": 2,
+      "title": "Strength II: Volume Increase",
+      "type": "strength",
+      "duration": "60 Min",
+      "focus": "Erhöhung des Volumens gegenüber Woche 1",
+      "color": "border-blue-500 text-blue-600",
+      "badgeColor": "bg-blue-100 text-blue-700",
+      "exercises": [
+        { "name": "Back Squat (Langhantel)", "sets": 5, "reps": "6-8", "rpe": "8.5", "note": "Gewicht gleichbleibend, +1 Satz mehr als W1", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "12", "completed": true }, { "weight": "45", "reps": "12", "completed": true }] },
+        { "name": "Push Press (LH)", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Leichter Drive aus den Beinen erlaubt", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "10", "completed": true }, { "weight": "42.5", "reps": "8", "completed": true }] },
+        { "name": "Klimmzüge (enger Griff)", "sets": 3, "reps": "Max", "rpe": "9", "note": "Fokus auf die exzentrische Phase", "logs": [{ "weight": "0", "reps": "4", "completed": true }, { "weight": "0", "reps": "3", "completed": true }, { "weight": "0", "reps": "2", "completed": true }] },
+        { "name": "Theraband Facepulls", "sets": 3, "reps": "20", "rpe": "6", "note": "Schultergesundheit", "logs": [{ "weight": "", "reps": "20", "completed": true }, { "weight": "0", "reps": "20", "completed": true }, { "weight": "0", "reps": "20", "completed": true }] }
+      ]
+    },
+    {
+      "id": 5,
+      "week": 2,
+      "title": "Hyrox Simulation: EMOM",
+      "type": "circuit",
+      "duration": "40 Min",
+      "focus": "Belastung unter Zeitdruck (Every Minute on the Minute)",
+      "color": "border-green-500 text-green-600",
+      "badgeColor": "bg-green-100 text-green-700",
+      "exercises": [
+        { "name": "Min 1: KB Swings (12kg)", "sets": 10, "reps": "20", "rpe": "8", "note": "Rest der Minute ist Pause", "logs": [] },
+        { "name": "Min 2: Burpees", "sets": 10, "reps": "10", "rpe": "8", "note": "Konstante Pace halten", "logs": [] },
+        { "name": "Min 3: Air Squats", "sets": 10, "reps": "25", "rpe": "7", "note": "Tiefe validieren", "logs": [] },
+        { "name": "Min 4: Hollow Hold", "sets": 10, "reps": "40 Sek", "rpe": "7", "note": "Rücken fest am Boden", "logs": [] }
+      ]
+    },
+    {
+      "id": 6,
+      "week": 2,
+      "title": "Endurance & Grip",
+      "type": "endurance",
+      "duration": "60 Min",
+      "focus": "Grundlagenausdauer gepaart mit Vorbelastung",
+      "color": "border-yellow-500 text-yellow-600",
+      "badgeColor": "bg-yellow-100 text-yellow-700",
+      "exercises": [
+        { "name": "Laufen (Outdoor/Laufband)", "sets": 1, "reps": "5km", "rpe": "6", "note": "Alle 1km 20 Ausfallschritte machen", "logs": [] },
+        { "name": "Dead Hang (Klimmzugstange)", "sets": 3, "reps": "Max Zeit", "rpe": "10", "note": "Nach dem Lauf ausführen", "logs": [] },
+        { "name": "Russian Twist (8kg KB)", "sets": 3, "reps": "40", "rpe": "7", "note": "Rotation aus der Brustwirbelsäule", "logs": [] }
+      ]
+    },
+    {
+      "id": 7,
+      "week": 3,
+      "title": "Strength III: Intensity Peak",
+      "type": "strength",
+      "duration": "60 Min",
+      "focus": "Gewichtserhöhung (Peak der Phase)",
+      "color": "border-blue-500 text-blue-600",
+      "badgeColor": "bg-blue-100 text-blue-700",
+      "exercises": [
+        { "name": "Back Squat (Langhantel)", "sets": 3, "reps": "4-6", "rpe": "9", "note": "Höchstes Gewicht der 4 Wochen", "logs": [] },
+        { "name": "Floor Press (LH)", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Ersatz für Bankdrücken ohne Bank", "logs": [] },
+        { "name": "KB Clean & Press (12kg)", "sets": 4, "reps": "8 pro Seite", "rpe": "8", "note": "Stabilisation im Core", "logs": [] },
+        { "name": "Theraband Rows", "sets": 3, "reps": "15", "rpe": "7", "note": "Starke Kontraktion hinten halten", "logs": [] }
+      ]
+    },
+    {
+      "id": 8,
+      "week": 3,
+      "title": "Hyrox Power Circuit",
+      "type": "circuit",
+      "duration": "50 Min",
+      "focus": "Explosivität & Hohe Intensität",
+      "color": "border-green-500 text-green-600",
+      "badgeColor": "bg-green-100 text-green-700",
+      "exercises": [
+        { "name": "Broad Jumps", "sets": 5, "reps": "10", "rpe": "8", "note": "Max. Distanz pro Sprung (Hyrox Element)", "logs": [] },
+        { "name": "KB Thrusters (12kg)", "sets": 4, "reps": "15", "rpe": "9", "note": "Flüssige Bewegung", "logs": [] },
+        { "name": "Pushups", "sets": 4, "reps": "Max", "rpe": "9", "note": "Brust zum Boden", "logs": [] },
+        { "name": "Plank Jacks", "sets": 4, "reps": "45 Sek", "rpe": "8", "note": "Core unter Pulsbelastung", "logs": [] }
+      ]
+    },
+    {
+      "id": 9,
+      "week": 3,
+      "title": "Specific Endurance",
+      "type": "endurance",
+      "duration": "70 Min",
+      "focus": "Lange Belastung, Hyrox-Spezifisch",
+      "color": "border-yellow-500 text-yellow-600",
+      "badgeColor": "bg-yellow-100 text-yellow-700",
+      "exercises": [
+        { "name": "Laufen", "sets": 1, "reps": "8km", "rpe": "7", "note": "Konstantes Tempo (Zone 2/3)", "logs": [] },
+        { "name": "KB Suitcase Carry (12kg)", "sets": 4, "reps": "30m/Seite", "rpe": "8", "note": "Aufrechter Gang, kein Neigen", "logs": [] }
+      ]
+    },
+    {
+      "id": 10,
+      "week": 4,
+      "title": "Deload & Recovery: Strength",
+      "type": "strength",
+      "duration": "45 Min",
+      "focus": "Regeneration & Technik (50% Volumen)",
+      "color": "border-blue-500 text-blue-600",
+      "badgeColor": "bg-blue-100 text-blue-700",
+      "exercises": [
+        { "name": "Back Squat (Langhantel)", "sets": 2, "reps": "10", "rpe": "5", "note": "Leichtes Gewicht, Fokus auf Form", "logs": [] },
+        { "name": "Overhead Press (LH)", "sets": 2, "reps": "10", "rpe": "5", "note": "Saubere Technik", "logs": [] },
+        { "name": "Klimmzüge (Unterstützt)", "sets": 2, "reps": "8", "rpe": "5", "note": "Nicht bis zum Versagen", "logs": [] }
+      ]
+    },
+    {
+      "id": 11,
+      "week": 4,
+      "title": "Deload: Mobility & Flow",
+      "type": "circuit",
+      "duration": "40 Min",
+      "focus": "Aktive Erholung",
+      "color": "border-green-500 text-green-600",
+      "badgeColor": "bg-green-100 text-green-700",
+      "exercises": [
+        { "name": "KB Halos (6kg)", "sets": 3, "reps": "10/Richtung", "rpe": "4", "note": "Schultermobilität", "logs": [] },
+        { "name": "Cossack Squats", "sets": 3, "reps": "12", "rpe": "5", "note": "Hüftöffnung", "logs": [] },
+        { "name": "Theraband Pull-aparts", "sets": 3, "reps": "20", "rpe": "4", "note": "Haltung", "logs": [] },
+        { "name": "Bird-Dog", "sets": 3, "reps": "12", "rpe": "4", "note": "Core Kontrolle", "logs": [] }
+      ]
+    },
+    {
+      "id": 12,
+      "week": 4,
+      "title": "Deload: Easy Run",
+      "type": "endurance",
+      "duration": "30 Min",
+      "focus": "Lockerer Lauf zur Durchblutung",
+      "color": "border-yellow-500 text-yellow-600",
+      "badgeColor": "bg-yellow-100 text-yellow-700",
+      "exercises": [
+        { "name": "Laufen", "sets": 1, "reps": "4km", "rpe": "4", "note": "Sehr entspanntes Tempo", "logs": [] },
+        { "name": "Dehnen / Foam Rolling", "sets": 1, "reps": "15 Min", "rpe": "2", "note": "Ganzkörper Fokus", "logs": [] }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "id": 1768661676926,
+      "workoutId": 4,
+      "workoutTitle": "Strength II: Volume Increase",
+      "date": "2026-01-17T14:54:36.926Z",
+      "week": 2,
+      "type": "strength",
+      "totalDuration": "00:04",
+      "snapshot": {
+        "id": 4,
+        "week": 2,
+        "title": "Strength II: Volume Increase",
+        "type": "strength",
+        "duration": "60 Min",
+        "focus": "Erhöhung des Volumens gegenüber Woche 1",
+        "color": "border-blue-500 text-blue-600",
+        "badgeColor": "bg-blue-100 text-blue-700",
+        "exercises": [
+          { "name": "Back Squat (Langhantel)", "sets": 5, "reps": "6-8", "rpe": "8.5", "note": "Gewicht gleichbleibend, +1 Satz mehr als W1", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "12", "completed": true }, { "weight": "45", "reps": "12", "completed": true }] },
+          { "name": "Push Press (LH)", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Leichter Drive aus den Beinen erlaubt", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "42.5", "reps": "10", "completed": true }, { "weight": "42.5", "reps": "8", "completed": true }] },
+          { "name": "Klimmzüge (enger Griff)", "sets": 3, "reps": "Max", "rpe": "9", "note": "Fokus auf die exzentrische Phase", "logs": [{ "weight": "0", "reps": "4", "completed": true }, { "weight": "0", "reps": "3", "completed": true }, { "weight": "0", "reps": "2", "completed": true }] },
+          { "name": "Theraband Facepulls", "sets": 3, "reps": "20", "rpe": "6", "note": "Schultergesundheit", "logs": [{ "weight": "", "reps": "20", "completed": true }, { "weight": "0", "reps": "20", "completed": true }, { "weight": "0", "reps": "20", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1768507864513,
+      "workoutId": 3,
+      "workoutTitle": "Functional Capacity: Grip & Core",
+      "date": "2026-01-15T20:11:04.513Z",
+      "week": 1,
+      "type": "strength",
+      "totalDuration": "38:57",
+      "snapshot": {
+        "id": 3,
+        "week": 1,
+        "title": "Functional Capacity: Grip & Core",
+        "type": "strength",
+        "duration": "50 Min",
+        "focus": "Griffkraft Progression & Pull-Stärke",
+        "color": "border-purple-500 text-purple-600",
+        "badgeColor": "bg-purple-100 text-purple-700",
+        "exercises": [
+          { "name": "Farmer's Walk (2x 20kg Scheiben)", "sets": 4, "reps": "40m", "rpe": "9", "note": "Scheiben im Zangengriff halten (Pinch Grip)", "logs": [{ "weight": "20", "reps": "25", "completed": true }, { "weight": "20", "reps": "30", "completed": true }, { "weight": "20", "reps": "35", "completed": true }, { "weight": "20", "reps": "38", "completed": true }] },
+          { "name": "Barbell Row (Langhantel)", "sets": 3, "reps": "10-12", "rpe": "8", "note": "Oberkörper stabil halten", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }, { "weight": "45", "reps": "12", "completed": true }] },
+          { "name": "Hanging Knee Raises", "sets": 3, "reps": "15", "rpe": "7", "note": "An der Klimmzugstange hängen", "logs": [{ "weight": "0", "reps": "12", "completed": true }, { "weight": "0", "reps": "12", "completed": true }, { "weight": "0", "reps": "9", "completed": true }] },
+          { "name": "Deadlift (Langhantel)", "sets": 3, "reps": "8", "rpe": "7", "note": "Technikfokus, moderates Gewicht", "logs": [{ "weight": "30", "reps": "12", "completed": true }, { "weight": "30", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1768149530335,
+      "workoutId": 2,
+      "workoutTitle": "Hyrox Engine: KB Circuit",
+      "date": "2026-01-11T16:38:50.335Z",
+      "week": 1,
+      "type": "circuit",
+      "totalDuration": "57:37",
+      "snapshot": {
+        "id": 2,
+        "week": 1,
+        "title": "Hyrox Engine: KB Circuit",
+        "type": "circuit",
+        "duration": "45 Min",
+        "focus": "Kraftausdauer & Herzfrequenz-Management",
+        "color": "border-green-500 text-green-600",
+        "badgeColor": "bg-green-100 text-green-700",
+        "exercises": [
+          { "name": "KB Goblet Squats (12kg)", "sets": 4, "reps": "20", "rpe": "7", "note": "Kurze Pause (30 Sek) zwischen den Sätzen", "logs": [{ "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }, { "weight": "12", "reps": "20", "completed": true }] },
+          { "name": "KB Swings (12kg)", "sets": 4, "reps": "25", "rpe": "8", "note": "Explosiver Hüftstreckung", "logs": [{ "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }, { "weight": "8", "reps": "25", "completed": true }] },
+          { "name": "Walking Lunges (Bodyweight)", "sets": 4, "reps": "30", "rpe": "7", "note": "Saubere Kniegelenksführung", "logs": [{ "weight": "0", "reps": "20", "completed": true }, { "weight": "0", "reps": "25", "completed": true }, { "weight": "2", "reps": "25", "completed": true }, { "weight": "4", "reps": "10", "completed": true }] },
+          { "name": "Burpees", "sets": 4, "reps": "12", "rpe": "9", "note": "Simulation der Hyrox-Transition", "logs": [{ "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "10", "completed": true }, { "weight": "", "reps": "", "completed": false }] }
+        ]
+      }
+    },
+    {
+      "id": 1768070704974,
+      "workoutId": 1,
+      "workoutTitle": "Hyrox Foundation: Barbell Strength",
+      "date": "2026-01-10T18:45:04.974Z",
+      "week": 1,
+      "type": "strength",
+      "totalDuration": "40:55",
+      "snapshot": {
+        "id": 1,
+        "week": 1,
+        "title": "Hyrox Foundation: Barbell Strength",
+        "type": "strength",
+        "duration": "60 Min",
+        "focus": "Maximalkraft & Core Stabilität",
+        "color": "border-blue-500 text-blue-600",
+        "badgeColor": "bg-blue-100 text-blue-700",
+        "exercises": [
+          { "name": "Back Squat (Langhantel)", "sets": 4, "reps": "6-8", "rpe": "8", "note": "Kontrollierte Tiefe, Fokus auf Power aus dem Stand", "logs": [{ "weight": "30", "reps": "10", "completed": true }, { "weight": "30", "reps": "10", "completed": true }, { "weight": "35", "reps": "12", "completed": true }, { "weight": "", "reps": "", "completed": false }] },
+          { "name": "Strict Overhead Press (LH)", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Kein Schwung aus den Beinen nutzen", "logs": [{ "weight": "30", "reps": "12", "completed": true }, { "weight": "35", "reps": "12", "completed": true }, { "weight": "35", "reps": "12", "completed": true }] },
+          { "name": "Klimmzüge (Unterstützt mit Theraband)", "sets": 3, "reps": "Max-1", "rpe": "9", "note": "Volle Range of Motion", "logs": [{ "weight": "0", "reps": "3", "completed": true }, { "weight": "0", "reps": "2", "completed": true }, { "weight": "0", "reps": "2", "completed": true }] },
+          { "name": "Plank mit Hantelscheibe (20kg)", "sets": 3, "reps": "45 Sek", "rpe": "7", "note": "Gewicht auf den unteren Rücken legen lassen", "logs": [{ "weight": "10", "reps": "45", "completed": true }, { "weight": "10", "reps": "45", "completed": true }, { "weight": "5", "reps": "30", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1767959303191,
+      "workoutId": 3,
+      "workoutTitle": "Tag 3: Core & Grip",
+      "date": "2026-01-09T11:48:23.191Z",
+      "week": 1,
+      "type": "assistance",
+      "totalDuration": "40:02",
+      "snapshot": {
+        "id": 3,
+        "week": 1,
+        "title": "Tag 3: Core & Grip",
+        "type": "assistance",
+        "duration": "30 Min",
+        "focus": "Stabilität",
+        "color": "border-teal-500 text-teal-600",
+        "badgeColor": "bg-teal-100 text-teal-700",
+        "exercises": [
+          { "name": "Farmers Carry", "sets": 3, "reps": "40m", "rpe": "7", "note": "Pro Seite laufen", "logs": [{ "weight": "20", "reps": "20", "completed": true }, { "weight": "20", "reps": "40", "completed": true }, { "weight": "20", "reps": "30", "completed": true }] },
+          { "name": "Russian Twists", "sets": 3, "reps": "20", "rpe": "9", "note": "Füße hoch wenn möglich", "logs": [{ "weight": "2.5", "reps": "30", "completed": true }, { "weight": "5", "reps": "25", "completed": true }, { "weight": "10", "reps": "20", "completed": true }] },
+          { "name": "Plank Pull-Through", "sets": 3, "reps": "12", "rpe": "8", "note": "KB durchziehen", "logs": [{ "weight": "8", "reps": "12", "completed": true }, { "weight": "8", "reps": "12", "completed": true }, { "weight": "12", "reps": "12", "completed": true }] },
+          { "name": "Halo", "sets": 3, "reps": "10", "rpe": "7", "note": "Um den Kopf kreisen", "logs": [{ "weight": "12", "reps": "10", "completed": true }, { "weight": "15", "reps": "10", "completed": true }, { "weight": "15", "reps": "12", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1767891088820,
+      "workoutId": 2,
+      "workoutTitle": "Tag 2: Ausdauer Zirkel",
+      "date": "2026-01-08T16:51:28.820Z",
+      "week": 1,
+      "type": "circuit",
+      "totalDuration": "35:15",
+      "snapshot": {
+        "id": 2,
+        "week": 1,
+        "title": "Tag 2: Ausdauer Zirkel",
+        "type": "circuit",
+        "duration": "30-40 Min",
+        "focus": "Herz-Kreislauf",
+        "color": "border-orange-500 text-orange-600",
+        "badgeColor": "bg-orange-100 text-orange-700",
+        "exercises": [
+          { "name": "KB Swings", "sets": 3, "reps": "20", "rpe": "Explosiv", "note": "Hüft-Einsatz! (12er)", "logs": [{ "weight": "4", "reps": "25", "completed": true }, { "weight": "6", "reps": "25", "completed": true }, { "weight": "6", "reps": "25", "completed": true }] },
+          { "name": "Thruster", "sets": 3, "reps": "10", "rpe": "Hoch", "note": "Squat + Drücken", "logs": [{ "weight": "15", "reps": "12", "completed": true }, { "weight": "30", "reps": "10", "completed": true }, { "weight": "30", "reps": "12", "completed": true }] },
+          { "name": "Burpees", "sets": 3, "reps": "10", "rpe": "Pace", "note": "Ohne Gewicht", "logs": [{ "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "10", "completed": true }, { "weight": "0", "reps": "12", "completed": true }] },
+          { "name": "Mountain Climbers", "sets": 3, "reps": "30sek", "rpe": "Schnell", "note": "Am Boden", "logs": [{ "weight": "0", "reps": "15", "completed": true }, { "weight": "0", "reps": "20", "completed": true }, { "weight": "0", "reps": "25", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1767815551032,
+      "workoutId": -1,
+      "workoutTitle": "Jumptraining ",
+      "date": "2026-01-07T19:52:31.032Z",
+      "week": 1,
+      "type": "Custom",
+      "snapshot": {
+        "title": "Jumptraining ",
+        "focus": "Freies Training",
+        "exercises": [
+          { "name": "Details / Notizen", "logs": [{ "weight": "", "reps": "60 Min", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1767464088854,
+      "workoutId": 1,
+      "workoutTitle": "Tag 1: KB Kraft",
+      "date": "2026-01-03T18:14:48.854Z",
+      "week": 1,
+      "type": "strength",
+      "snapshot": {
+        "id": 1,
+        "week": 1,
+        "title": "Tag 1: KB Kraft",
+        "type": "strength",
+        "duration": "45-60 Min",
+        "focus": "Ganzkörper & Basis",
+        "color": "border-blue-500 text-blue-600",
+        "badgeColor": "bg-blue-100 text-blue-700",
+        "exercises": [
+          { "name": "Goblet Squats (KB)", "sets": 3, "reps": "10-12", "rpe": "8", "note": "Nimm die 8er oder 12er", "logs": [{ "weight": "12", "reps": "12", "completed": true }, { "weight": "12", "reps": "12", "completed": true }, { "weight": "12", "reps": "12", "completed": true }] },
+          { "name": "Schulterdrücken", "sets": 3, "reps": "8-10", "rpe": "8", "note": "Pro Seite (4er oder 6er)", "logs": [{ "weight": "6", "reps": "12", "completed": true }, { "weight": "7", "reps": "12", "completed": true }, { "weight": "7", "reps": "15", "completed": true }] },
+          { "name": "Einarmiges Rudern", "sets": 3, "reps": "10-12", "rpe": "8", "note": "Abstützen auf Stuhl", "logs": [{ "weight": "9", "reps": "12", "completed": true }, { "weight": "9", "reps": "12", "completed": true }, { "weight": "9", "reps": "12", "completed": true }] },
+          { "name": "Rumanian Deadlift", "sets": 3, "reps": "12-15", "rpe": "7", "note": "Beide Hände an die 12er", "logs": [{ "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "12", "completed": true }, { "weight": "40", "reps": "13", "completed": true }] },
+          { "name": "Floor Press", "sets": 3, "reps": "10-12", "rpe": "8", "note": "Rückenlage am Boden", "logs": [{ "weight": "9", "reps": "12", "completed": true }, { "weight": "9", "reps": "15", "completed": true }, { "weight": "12", "reps": "14", "completed": true }] }
+        ]
+      }
+    },
+    {
+      "id": 1767451653915,
+      "workoutId": -1,
+      "workoutTitle": "Jumptraining ",
+      "date": "2026-01-03T14:47:33.915Z",
+      "week": 1,
+      "type": "Custom",
+      "snapshot": {
+        "title": "Jumptraining ",
+        "focus": "Freies Training",
+        "exercises": [
+          { "name": "Details / Notizen", "logs": [{ "weight": "Hammer ", "reps": "60 Min", "completed": true }] }
+        ]
+      }
+    }
+  ],
+  "equipment": [
+    {
+      "category": "Langhantel",
+      "items": [
+        "Olympia-Stange",
+        "Gewichte bis 100kg",
+        "Power Rack"
+      ]
+    },
+    {
+      "category": "Kettlebells",
+      "items": [
+        "4 kg",
+        "6 kg",
+        "8 kg",
+        "12 kg",
+        "Hantelscheiben 2x 20kg"
+      ]
+    },
+    {
+      "category": "Bodyweight & Sonstiges",
+      "items": [
+        "Klimmzugstange",
+        "Therabänder (div. Stärken)"
+      ]
+    }
+  ],
+  "prompts": {
+    "system": "Du bist Coach Andy, ein spezialisierter Home-Gym Coach für funktionelle Fitness.\nDeine Mission: Mich fit, stark und athletisch machen – mit Hyrox-inspirierten Übungen, aber ohne Wettkampf-Druck.\n\nDEINE PHILOSOPHIE:\n1. Home Gym Only: Nutze NUR mein Equipment (Langhantel, Kettlebells, Stange, Bänder). Erfinde KEINE Maschinen (kein Skierg, keine Beinpresse)!\n2. Funktionalität vor Optik: Wir trainieren Bewegungen, nicht nur Muskeln. Tragen, Heben, Ziehen, Drücken.\n3. Langlebigkeit: Wir zerstören uns nicht. Form geht immer vor Gewicht. Das Ziel ist Gesundheit, nicht Rekorde.\n4. Kreativität: Wenn Equipment fehlt (z.B. Schlitten), simuliere die Bewegung (z.B. Handtuch auf Boden schieben).\n\nTECHNISCHE REGELN:\n- Antworte NIEMALS mit normalem Text.\n- Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im Code-Block.",
+    "plan": "Erstelle einen neuen 4-Wochen-Trainingsplan (3-4 Einheiten pro Woche) für funktionelle Home-Gym Fitness.\n\nANWEISUNG ZUR PROGRESSION:\n- Analysiere meinen Trainingsverlauf (siehe unten).\n- Wenn ich stagniere: Ändere die Übungsvariation oder das Tempo.\n- Wenn ich mich gut fühle: Erhöhe leicht das Gewicht oder die Wiederholungen.\n- Berücksichtige strikt mein verfügbares Equipment (siehe unten).\n\nWICHTIG: Antworte NUR mit dem JSON-Code-Block.",
+    "warmup": "Erstelle ein 5-Minuten 'Movement Prep' Warmup. Fokus: Gelenke schmieren und Puls leicht erhöhen. Keine statischen Dehnungen, nur dynamische Bewegungen passend zum heutigen Workout (RAMP Protokoll).",
+    "cooldown": "Erstelle ein 5-Minuten Cooldown. Fokus: Puls senken und die trainierte Muskulatur leicht statisch dehnen oder lockern (Parasympathikus aktivieren)."
+  },
+  "stats": {
+    "name": "Athlete",
+    "weight": 0,
+    "height": 0,
+    "total": 12,
+    "thisWeek": 1
+  }
+}
