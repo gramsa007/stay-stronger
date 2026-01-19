@@ -1,26 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
-  UserCircle, 
-  Settings, 
-  Download, 
-  Upload, 
-  ClipboardList, 
-  PlusCircle, 
-  Sparkles, 
-  Zap, 
-  Wind, 
-  Coffee, 
-  ChevronRight, 
-  Dumbbell,
-  Trash2,
-  RefreshCcw
+  Trophy, Flame, Dumbbell, Settings, 
+  Download, Upload, FileJson, PlusCircle, Trash2 
 } from 'lucide-react';
 
-interface DashboardProps {
+interface DashboardScreenProps {
   stats: any;
-  streak: any;
-  onExport: () => void;
-  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  streak: any; // Geändert auf 'any' um Typ-Konflikte zu verhindern
   onPastePlan: () => void;
   onOpenCustomLog: () => void;
   onOpenPlanPrompt: () => void;
@@ -30,152 +16,155 @@ interface DashboardProps {
   onOpenCooldownPrompt: () => void;
   onClearPlan: () => void;
   onReset: () => void;
+  onExport: () => void;
+  onImport: (json: any) => void;
 }
 
-export const DashboardScreen: React.FC<DashboardProps> = ({
-  stats,
-  streak,
-  onExport,
-  onImport,
-  onPastePlan,
-  onOpenCustomLog,
-  onOpenPlanPrompt,
-  onOpenEquipment,
-  onOpenSystemPrompt,
-  onOpenWarmupPrompt,
-  onOpenCooldownPrompt,
-  onClearPlan,
-  onReset
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  stats, streak, onPastePlan, onOpenCustomLog, onOpenPlanPrompt,
+  onOpenEquipment, onOpenSystemPrompt, onOpenWarmupPrompt,
+  onOpenCooldownPrompt, onClearPlan, onReset, onExport, onImport
 }) => {
-  
-  const handleSafeReset = () => {
-    if (window.confirm("Bist du sicher? Alle Daten, dein Verlauf und deine Einstellungen werden gelöscht!")) {
-      onReset();
-    }
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const json = JSON.parse(content);
+        if (onImport) onImport(json);
+      } catch (err) {
+        alert("Fehler beim Lesen der Backup-Datei.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   };
 
-  const handleSafeClearPlan = () => {
-    if (window.confirm("Möchtest du wirklich den aktuellen Trainingsplan löschen? Dein Verlauf bleibt erhalten.")) {
-      onClearPlan();
-    }
-  };
+  // --- SICHERHEITS-CHECK ---
+  // Wir stellen sicher, dass Werte existieren, bevor wir sie anzeigen.
+  // Das verhindert den "Weißen Bildschirm".
+  const safeWorkouts = stats?.totalWorkouts || 0;
+  const safeStreakCurrent = streak?.current || streak?.currentStreak || 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-32">
-      
-      {/* Header Bereich */}
-      <div className="bg-slate-900 pt-12 pb-20 px-6 rounded-b-[3rem] shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
-            <UserCircle size={40} className="text-white" />
+      {/* Hidden File Input für Backup Import */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        className="hidden" 
+        accept=".json"
+      />
+
+      {/* Header Section */}
+      <div className="bg-slate-900 pt-12 pb-24 px-6 rounded-b-[3rem] shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[80px] opacity-20 translate-x-1/3 -translate-y-1/3"></div>
+        
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-white text-3xl font-black italic uppercase tracking-tighter mb-1">Coach Andy</h1>
+              <p className="text-blue-400 text-xs font-black uppercase tracking-widest">Hyrox Performance AI</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onOpenSystemPrompt} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors"><Settings size={20} /></button>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-white tracking-tight uppercase italic">Coach Andy</h1>
-            <p className="text-blue-300 text-sm font-bold tracking-widest uppercase">Athlete Profile</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-5 border border-white/10">
+              <div className="flex items-center gap-3 mb-2 text-blue-400">
+                <Trophy size={20} />
+                <span className="text-[10px] font-black uppercase tracking-wider">Workouts</span>
+              </div>
+              {/* Hier nutzen wir die sichere Variable */}
+              <div className="text-4xl font-black text-white font-mono">{safeWorkouts}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-5 border border-white/10">
+              <div className="flex items-center gap-3 mb-2 text-orange-400">
+                <Flame size={20} />
+                <span className="text-[10px] font-black uppercase tracking-wider">Streak</span>
+              </div>
+              {/* Hier nutzen wir die sichere Variable */}
+              <div className="text-4xl font-black text-white font-mono">{safeStreakCurrent}<span className="text-lg text-white/50 ml-1">Tage</span></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-5 -mt-10 space-y-6 relative z-20">
+      {/* Main Actions */}
+      <div className="px-5 -mt-12 relative z-20 space-y-6">
         
-        {/* Backup & Sync Karte */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border border-slate-800">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl">
-                <Settings size={20} />
-              </div>
-              <div>
-                <h2 className="text-white font-black text-lg">Cloud Sync</h2>
-                <p className="text-slate-500 text-xs font-medium">Backup & Restore</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={onExport} className="p-3 bg-slate-800 text-blue-400 rounded-2xl hover:bg-slate-700 transition-colors">
-                <Download size={20} />
-              </button>
-              <label className="p-3 bg-slate-800 text-green-400 rounded-2xl hover:bg-slate-700 transition-colors cursor-pointer">
-                <Upload size={20} />
-                <input type="file" className="hidden" onChange={onImport} accept=".json" />
-              </label>
-              <button onClick={onPastePlan} className="p-3 bg-slate-800 text-teal-400 rounded-2xl hover:bg-slate-700 transition-colors">
-                <ClipboardList size={20} />
-              </button>
-            </div>
-          </div>
-          
-          <button 
-            onClick={onOpenCustomLog}
-            className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border border-slate-700/50 transition-all active:scale-95"
-          >
-            <PlusCircle size={18} className="text-blue-400" /> Freies Training loggen
-          </button>
-        </div>
-
-        {/* Coach KI Setup Sektion */}
-        <div>
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 ml-2">Coach KI Setup</h3>
-          <div className="bg-white rounded-[2rem] p-2 shadow-sm border border-gray-100">
-            <button onClick={onOpenSystemPrompt} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Sparkles size={20} />
-              </div>
-              <span className="flex-1 text-left font-bold text-slate-700">Coaching Philosophie</span>
-              <ChevronRight size={18} className="text-gray-300" />
-            </button>
-            <div className="h-px bg-gray-50 mx-4" />
-            <button onClick={onOpenPlanPrompt} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Zap size={20} />
-              </div>
-              <span className="flex-1 text-left font-bold text-slate-700">Plan Erstellung</span>
-              <ChevronRight size={18} className="text-gray-300" />
-            </button>
-            <div className="h-px bg-gray-50 mx-4" />
-            <button onClick={onOpenWarmupPrompt} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-              <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Wind size={20} />
-              </div>
-              <span className="flex-1 text-left font-bold text-slate-700">Warmup Prompt</span>
-              <ChevronRight size={18} className="text-gray-300" />
-            </button>
-            <div className="h-px bg-gray-50 mx-4" />
-            <button onClick={onOpenCooldownPrompt} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-              <div className="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Coffee size={20} />
-              </div>
-              <span className="flex-1 text-left font-bold text-slate-700">Cooldown Prompt</span>
-              <ChevronRight size={18} className="text-gray-300" />
-            </button>
-          </div>
-        </div>
-
-        {/* Verwaltung Sektion */}
-        <div>
-          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 ml-2">Verwaltung</h3>
+        {/* Quick Start */}
+        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
+          <h2 className="text-slate-900 font-black italic uppercase text-lg mb-4">Aktionen</h2>
           <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={onOpenEquipment}
-              className="col-span-2 bg-white border border-gray-200 p-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-slate-700 hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              <Dumbbell size={20} className="text-blue-600" /> Equipment verwalten
+            <button onClick={onPastePlan} className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 p-6 rounded-[2rem] transition-all group">
+              <FileJson size={28} className="text-slate-400 group-hover:text-blue-600 mb-1" />
+              <span className="text-xs font-black uppercase text-slate-900">Plan Laden</span>
             </button>
-            <button 
-              onClick={handleSafeClearPlan}
-              className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-orange-600 hover:bg-orange-100 transition-colors"
-            >
-              <Trash2 size={18} /> Plan löschen
-            </button>
-            <button 
-              onClick={handleSafeReset}
-              className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-red-600 hover:bg-red-100 transition-colors"
-            >
-              <RefreshCcw size={18} /> App Reset
+            <button onClick={onOpenCustomLog} className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-green-50 hover:text-green-600 p-6 rounded-[2rem] transition-all group">
+              <PlusCircle size={28} className="text-slate-400 group-hover:text-green-600 mb-1" />
+              <span className="text-xs font-black uppercase text-slate-900">Freies Training</span>
             </button>
           </div>
         </div>
 
+        {/* AI Config */}
+        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
+          <h2 className="text-slate-900 font-black italic uppercase text-lg mb-4">KI Konfiguration</h2>
+          <div className="space-y-3">
+            <button onClick={onOpenPlanPrompt} className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
+              <span className="text-xs font-bold text-slate-600 uppercase">Trainingsplan Prompt</span>
+              <Settings size={16} className="text-slate-400" />
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={onOpenWarmupPrompt} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
+                <span className="text-xs font-bold text-slate-600 uppercase">Warmup</span>
+                <Settings size={16} className="text-slate-400" />
+              </button>
+              <button onClick={onOpenCooldownPrompt} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
+                <span className="text-xs font-bold text-slate-600 uppercase">Cooldown</span>
+                <Settings size={16} className="text-slate-400" />
+              </button>
+            </div>
+            <button onClick={onOpenEquipment} className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
+              <span className="text-xs font-bold text-slate-600 uppercase">Mein Equipment</span>
+              <Dumbbell size={16} className="text-slate-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Data Management */}
+        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
+          <h2 className="text-slate-900 font-black italic uppercase text-lg mb-4">Daten & Backup</h2>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <button onClick={onExport} className="flex items-center justify-center gap-2 p-4 bg-blue-50 text-blue-700 rounded-2xl font-bold text-xs uppercase hover:bg-blue-100 transition-colors">
+              <Download size={16} /> Backup Sichern
+            </button>
+            <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 p-4 bg-slate-50 text-slate-700 rounded-2xl font-bold text-xs uppercase hover:bg-slate-100 transition-colors">
+              <Upload size={16} /> Backup Laden
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={onClearPlan} className="flex items-center justify-center gap-2 p-4 bg-orange-50 text-orange-600 rounded-2xl font-bold text-xs uppercase hover:bg-orange-100 transition-colors">
+              <Trash2 size={16} /> Plan Löschen
+            </button>
+            <button onClick={onReset} className="flex items-center justify-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-xs uppercase hover:bg-red-100 transition-colors">
+              <Trash2 size={16} /> App Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="text-center pb-8">
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Coach Andy v1.0 • Hyrox Ready</p>
+        </div>
       </div>
     </div>
   );
