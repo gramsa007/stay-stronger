@@ -1,73 +1,181 @@
-import React, { useState } from 'react';
-import { X, ArrowRight, Wind, BarChart2, Coffee, FastForward, CheckCircle } from 'lucide-react';
+import React from 'react';
+import { Clock, ChevronLeft, CheckCircle, Circle, BarChart2, Zap, Trophy, FastForward } from 'lucide-react';
+import { formatTime } from '../utils/helpers'; 
 
-export const ActiveWorkoutScreen = ({ activeWorkoutData, totalSeconds, onFinishWorkout, onBackRequest, handleInputChange, toggleSetComplete, onAnalysisRequest, isRestActive, restSeconds, activeRestContext, onSkipRest }: any) => {
-  const [showConfirm, setShowConfirm] = useState(false);
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+interface ActiveWorkoutProps {
+  activeWorkoutData: any;
+  totalSeconds: number;
+  setTotalSeconds: (s: number) => void;
+  history: any[];
+  onBackRequest: () => void;
+  onFinishWorkout: () => void;
+  onAnalysisRequest: (name: string) => void;
+  handleInputChange: (exIdx: number, setIdx: number, field: string, val: string) => void;
+  toggleSetComplete: (exIdx: number, setIdx: number) => void;
+  isRestActive: boolean;
+  restSeconds: number;
+  onSkipRest: () => void; // <--- Das hat gefehlt!
+  activeRestContext: any;
+  ExitDialogComponent?: React.ReactNode;
+  AnalysisModalComponent?: React.ReactNode;
+}
+
+export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
+  activeWorkoutData,
+  totalSeconds,
+  onBackRequest,
+  onFinishWorkout,
+  onAnalysisRequest,
+  handleInputChange,
+  toggleSetComplete,
+  isRestActive,
+  restSeconds,
+  onSkipRest, // <--- Hier wird es nun entgegengenommen
+  ExitDialogComponent,
+  AnalysisModalComponent
+}) => {
+  
+  const renderExercise = (exercise: any, exIndex: number) => (
+    <div key={exIndex} className="mb-6 bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 overflow-hidden relative">
+      <div className="flex justify-between items-center mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg">
+            {exIndex + 1}
+          </div>
+          <h3 className="font-black text-xl text-slate-900 leading-tight uppercase italic">{exercise.name}</h3>
+        </div>
+        <button 
+          onClick={() => onAnalysisRequest(exercise.name)}
+          className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+        >
+          <BarChart2 size={20} />
+        </button>
+      </div>
+      
+      <div className="flex gap-3 mb-2 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <span className="w-8 text-center">Set</span>
+        <span className="w-20 text-center">Gewicht</span>
+        <span className="w-20 text-center">Reps</span>
+        <span className="ml-auto pr-4">Status</span>
+      </div>
+
+      <div className="space-y-2">
+        {exercise.logs.map((set: any, setIndex: number) => {
+          const isDone = set.completed;
+          return (
+            <div 
+              key={setIndex} 
+              className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${
+                isDone ? 'bg-green-50 border-green-100' : 'bg-slate-50 border-transparent'
+              } border`}
+            >
+              <span className={`w-8 text-center font-black italic ${isDone ? 'text-green-600' : 'text-slate-300'}`}>
+                {setIndex + 1}
+              </span>
+              
+              <div className="relative w-20">
+                <input 
+                  type="text" 
+                  inputMode="decimal"
+                  placeholder="kg"
+                  value={set.weight}
+                  onChange={(e) => handleInputChange(exIndex, setIndex, 'weight', e.target.value)}
+                  className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm ${
+                    isDone ? 'bg-white/50 border-green-200' : 'bg-white border-slate-200'
+                  } border`}
+                />
+              </div>
+
+              <span className="text-slate-300 font-bold">×</span>
+              
+              <div className="relative w-20">
+                <input 
+                  type="text" 
+                  inputMode="numeric"
+                  placeholder="Reps"
+                  value={set.reps}
+                  onChange={(e) => handleInputChange(exIndex, setIndex, 'reps', e.target.value)}
+                  className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm ${
+                    isDone ? 'bg-white/50 border-green-200' : 'bg-white border-slate-200'
+                  } border`}
+                />
+              </div>
+              
+              <button 
+                onClick={() => toggleSetComplete(exIndex, setIndex)}
+                className={`ml-auto w-12 h-12 flex items-center justify-center rounded-2xl transition-all active:scale-90 ${
+                  isDone 
+                  ? 'bg-green-500 text-white shadow-lg shadow-green-200' 
+                  : 'bg-white border border-slate-200 text-slate-200'
+                }`}
+              >
+                <CheckCircle size={24} strokeWidth={isDone ? 3 : 2} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pb-32">
-      {isRestActive && (
-        <div className="fixed inset-0 z-[1000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 animate-in fade-in">
-          <div className="mb-4 text-blue-500 animate-pulse"><Coffee size={40} /></div>
-          <h2 className="text-blue-500 text-2xl font-black italic tracking-widest uppercase mb-2">Pause</h2>
-          <div className="text-[120px] font-mono font-black text-white leading-none mb-8">{restSeconds}<span className="text-4xl ml-2">s</span></div>
-          <div className="text-center mb-12">
-            <p className="text-slate-500 text-xs font-black uppercase mb-1">Nächster Satz</p>
-            <p className="text-white text-xl font-bold italic">{activeRestContext?.exerciseName}</p>
+    <div className="flex flex-col h-screen bg-gray-50">
+      {ExitDialogComponent}
+      {AnalysisModalComponent}
+
+      <div className="bg-slate-900 pt-12 pb-6 px-6 shadow-xl sticky top-0 z-30">
+        <div className="flex items-center justify-between">
+          <button onClick={onBackRequest} className="p-3 bg-white/10 rounded-2xl text-white">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="flex flex-col items-center">
+            <h1 className="font-black text-white italic uppercase tracking-tighter text-lg leading-tight">
+              {activeWorkoutData.title}
+            </h1>
+            <div className="mt-2 flex items-center gap-2 bg-blue-500 px-4 py-1.5 rounded-full shadow-lg shadow-blue-900/40">
+              <Clock size={16} className="text-white animate-pulse" />
+              <span className="font-black text-white font-mono text-sm tracking-widest leading-none">
+                {formatTime(totalSeconds)}
+              </span>
+            </div>
           </div>
-          <button onClick={onSkipRest} className="flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 rounded-[2rem] text-white font-black uppercase tracking-widest text-sm hover:bg-white/10">
-            <FastForward size={20} className="text-blue-400" /> Pause überspringen
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400">
+            <Zap size={20} fill="currentColor" />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Pausen-Overlay mit Skip-Button --- */}
+      {isRestActive && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-lg sticky top-[116px] z-20 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Pause läuft</p>
+              <p className="font-black font-mono text-2xl leading-none">{formatTime(restSeconds)}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onSkipRest}
+            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-all active:scale-95 border border-white/10"
+          >
+            <span className="text-xs font-black uppercase tracking-widest">Skip</span>
+            <FastForward size={16} fill="currentColor" />
           </button>
         </div>
       )}
 
-      <div className="bg-slate-900 pt-12 pb-14 rounded-b-[3rem] shadow-2xl text-center text-white relative">
-        <button onClick={onBackRequest} className="absolute top-12 left-6 p-2 bg-white/10 rounded-full"><X size={20} /></button>
-        <h2 className="text-sm font-black italic tracking-widest uppercase text-blue-400/60 mb-2">{activeWorkoutData.title}</h2>
-        <div className="text-6xl font-mono font-black text-white">{formatTime(totalSeconds)}</div>
+      <div className="flex-1 overflow-y-auto p-5 pb-32">
+        {activeWorkoutData.exercises.map((ex: any, idx: number) => renderExercise(ex, idx))}
+        
+        <button 
+          onClick={onFinishWorkout}
+          className="w-full mt-10 bg-slate-900 text-white font-black italic uppercase tracking-widest py-5 rounded-[2rem] shadow-2xl shadow-slate-300 hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-3"
+        >
+          <Trophy size={20} className="text-blue-400" />
+          Session abschließen
+        </button>
       </div>
-
-      <div className="px-5 mt-8 space-y-6">
-        {activeWorkoutData.exercises.map((exercise: any, exIdx: number) => (
-          <div key={exIdx} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-5">
-              <div>
-                <h3 className="font-black text-xl text-slate-900 italic uppercase">{exercise.name}</h3>
-                <p className="text-[10px] text-blue-600 mt-1 font-black uppercase tracking-widest">{exercise.sets} Sätze • {exercise.reps} Reps</p>
-              </div>
-              <button onClick={() => onAnalysisRequest(exercise.name)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl"><BarChart2 size={20} /></button>
-            </div>
-            <div className="space-y-3">
-              {exercise.logs.map((log: any, setIdx: number) => (
-                <div key={setIdx} className={`flex items-center gap-3 p-2 rounded-[1.5rem] border ${log.completed ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${log.completed ? 'bg-green-500 text-white' : 'bg-white text-slate-400'}`}>{setIdx + 1}</div>
-                  <div className="flex-1 flex gap-2">
-                    <input type="number" placeholder="kg" value={log.weight} onChange={(e) => handleInputChange(exIdx, setIdx, 'weight', e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm font-black text-slate-900 outline-none" />
-                    <input type="number" placeholder="reps" value={log.reps} onChange={(e) => handleInputChange(exIdx, setIdx, 'reps', e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm font-black text-slate-900 outline-none" />
-                  </div>
-                  <button onClick={() => toggleSetComplete(exIdx, setIdx)} className={`w-14 h-12 rounded-xl flex items-center justify-center shadow-md ${log.completed ? 'bg-green-500 text-white' : 'bg-white text-slate-200 border border-slate-200'}`}><CheckCircle size={24} fill={log.completed ? "white" : "transparent"} /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="fixed bottom-28 left-0 right-0 px-8 flex justify-center z-40">
-        <button onClick={() => setShowConfirm(true)} className="w-full max-w-md py-5 bg-slate-900 text-white rounded-[2rem] font-black shadow-2xl uppercase tracking-widest italic">Workout Beenden</button>
-      </div>
-      {showConfirm && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-          <div className="bg-slate-900 w-full max-w-xs rounded-[3rem] shadow-2xl border border-slate-800 text-white p-8 text-center">
-            <h3 className="text-2xl font-black mb-2 italic uppercase">Fertig?</h3>
-            <p className="text-slate-400 text-sm mb-6 font-medium">Willst du dein Training abschließen?</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowConfirm(false)} className="flex-1 py-4 text-slate-500 font-bold text-xs uppercase">Abbrechen</button>
-              <button onClick={() => { setShowConfirm(false); onFinishWorkout(); }} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase">Beenden</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

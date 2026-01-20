@@ -81,8 +81,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex justify-center font-sans">
-      <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black flex justify-center font-sans antialiased">
+      <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col">
+        {/* Modals */}
         {showCustomLogModal && <CustomLogModal onClose={() => setShowCustomLogModal(false)} onSave={handleSaveCustomLog} />}
         {analysisExercise && <ExerciseAnalysisModal onClose={() => setAnalysisExercise(null)} exerciseName={analysisExercise} history={persistence.history} />}
         {showEquipmentModal && <EquipmentModal onClose={() => setShowEquipmentModal(false)} equipment={persistence.equipment as any} onSave={persistence.updateEquipment} />}
@@ -90,14 +91,15 @@ export default function App() {
         {activePromptModal && <PromptModal type={activePromptModal as any} value={(persistence.prompts as any)[activePromptModal]} onClose={() => setActivePromptModal(null)} onSave={(v) => { persistence.updatePrompts(activePromptModal, v); setActivePromptModal(null); }} />}
         {showExitDialog && <ExitDialog isOpen={showExitDialog} onSave={() => { session.endSession(); setShowExitDialog(false); }} onDiscard={() => { session.endSession(); setShowExitDialog(false); }} onCancel={() => setShowExitDialog(false)} />}
 
+        {/* Content Area */}
         {session.phase !== 'idle' ? (
-          <>
+          <div className="flex-1 overflow-y-auto">
             {session.phase === 'warmup' && <WarmupScreen prompt={persistence.prompts.warmup} onComplete={(t) => { session.setTotalSeconds(t); session.setPhase('training'); }} onBack={() => setShowExitDialog(true)} />}
             {session.phase === 'cooldown' && <CooldownScreen prompt={persistence.prompts.cooldown} onComplete={handleFinishWorkout} initialTime={session.totalSeconds} onTick={session.setTotalSeconds} />}
             {session.phase === 'training' && <ActiveWorkoutScreen activeWorkoutData={session.activeWorkoutData} totalSeconds={session.totalSeconds} setTotalSeconds={session.setTotalSeconds} history={persistence.history} onBackRequest={() => setShowExitDialog(true)} onFinishWorkout={() => session.setPhase('cooldown')} onAnalysisRequest={setAnalysisExercise} handleInputChange={session.handleInputChange} toggleSetComplete={session.toggleSetComplete} isRestActive={session.isRestActive} restSeconds={session.restSeconds} activeRestContext={session.activeRestContext} onSkipRest={session.skipRest} />}
-          </>
+          </div>
         ) : (
-          <div className="pb-24 min-h-screen">
+          <div className="pb-24 flex-1 overflow-y-auto overflow-x-hidden">
             {activeTab === 'profile' && <DashboardScreen stats={persistence.stats} streak={getStreakStats(persistence.history)} onPastePlan={() => setShowPastePlanModal(true)} onOpenCustomLog={() => setShowCustomLogModal(true)} onOpenPlanPrompt={() => setActivePromptModal('plan')} onOpenEquipment={() => setShowEquipmentModal(true)} onOpenSystemPrompt={() => setActivePromptModal('system')} onOpenWarmupPrompt={() => setActivePromptModal('warmup')} onOpenCooldownPrompt={() => setActivePromptModal('cooldown')} onClearPlan={() => persistence.setData([])} onReset={persistence.resetAll} onExport={handleExportJSON} onImport={persistence.importData} />}
             {activeTab === 'training' && <PlanScreen activeWeek={activeWeek} setActiveWeek={setActiveWeek} workouts={visibleWorkouts} isWorkoutCompleted={isWorkoutCompleted} onStartWorkout={(id) => { const w = persistence.data.find((x: any) => x.id === id); if(w) session.startSession(w); }} onPreviewWorkout={setPreviewWorkout} />}
             {activeTab === 'links' && <LinksScreen links={persistence.links} onAddLink={persistence.addLink} onDeleteLink={persistence.deleteLink} />}
@@ -105,15 +107,28 @@ export default function App() {
           </div>
         )}
 
+        {/* Improved Navigation Bar */}
         {session.phase === 'idle' && (
-          <div className="fixed bottom-0 w-full max-w-md mx-auto bg-white border-t border-gray-200 px-2 py-2 pb-6 flex justify-between items-center text-xs font-medium z-20">
-            {['profile', 'training', 'links', 'history'].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex flex-col items-center gap-1 p-2 rounded-lg flex-1 transition-colors ${activeTab === tab ? 'text-blue-800' : 'text-gray-400'}`}>
-                    {tab === 'profile' ? <UserCircle size={24} /> : tab === 'training' ? <Dumbbell size={24} /> : tab === 'links' ? <LinkIcon size={24} /> : <HistoryIcon size={24} />}
-                    <span className="capitalize">{tab === 'profile' ? 'Profil' : tab === 'training' ? 'Plan' : tab === 'links' ? 'Links' : 'Verlauf'}</span>
+          <nav className="fixed bottom-0 w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm border-t border-gray-100 px-3 py-2 pb-8 flex justify-between items-center z-20">
+            {['profile', 'training', 'links', 'history'].map(tab => {
+              const isActive = activeTab === tab;
+              return (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveTab(tab)} 
+                  className={`relative flex flex-col items-center gap-1 p-2 rounded-xl flex-1 transition-all duration-200 ${isActive ? 'text-blue-700 bg-blue-50/50' : 'text-gray-400 active:scale-95'}`}
+                >
+                  {tab === 'profile' ? <UserCircle size={24} /> : tab === 'training' ? <Dumbbell size={24} /> : tab === 'links' ? <LinkIcon size={24} /> : <HistoryIcon size={24} />}
+                  <span className="text-[10px] uppercase tracking-wider font-bold">
+                    {tab === 'profile' ? 'Profil' : tab === 'training' ? 'Training' : tab === 'links' ? 'Links' : 'Verlauf'}
+                  </span>
+                  {isActive && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-700 rounded-full" />
+                  )}
                 </button>
-            ))}
-          </div>
+              );
+            })}
+          </nav>
         )}
       </div>
     </div>

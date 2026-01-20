@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.7.0",
     "lucide-react": "^0.362.0",
