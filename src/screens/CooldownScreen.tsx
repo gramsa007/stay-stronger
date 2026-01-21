@@ -145,4 +145,4 @@ export const CooldownScreen: React.FC<CooldownScreenProps> = ({ prompt, onComple
       </div>
     </div>
   );
-};
+}
