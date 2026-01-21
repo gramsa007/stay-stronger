@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Eye, CheckCircle, Calendar, Target, Info, X, Clock } from 'lucide-react';
+import { Play, Eye, CheckCircle, Calendar, Target, Info, X, Clock, Circle } from 'lucide-react';
 
 interface PlanProps {
   activeWeek: number;
@@ -14,6 +14,9 @@ export const PlanScreen: React.FC<PlanProps> = ({
   activeWeek, setActiveWeek, workouts, isWorkoutCompleted, onStartWorkout, onPreviewWorkout
 }) => {
   const [showInfo, setShowInfo] = useState<string | null>(null);
+  // NEUER STATE FÜR DAS DETAILS-POPUP
+  const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+  
   const weeks = [1, 2, 3, 4];
 
   const typeDescriptions: { [key: string]: string } = {
@@ -108,16 +111,20 @@ export const PlanScreen: React.FC<PlanProps> = ({
                     </div>
                   </div>
 
-                  {completed && (
-                    <div className="bg-green-100 p-2 rounded-full text-green-600 shadow-inner">
-                      <CheckCircle size={20} fill="currentColor" className="text-white" />
-                    </div>
-                  )}
+                  {/* KORRIGIERTER STATUS INDIKATOR (Kreis) */}
+                  <div className={`p-2 rounded-full transition-all ${
+                    completed 
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' 
+                      : 'bg-white text-slate-300 border-2 border-slate-100'
+                  }`}>
+                    {completed ? <CheckCircle size={20} /> : <Circle size={20} />}
+                  </div>
                 </div>
 
                 <div className="flex gap-3">
+                  {/* MODIFIZIERTER DETAILS BUTTON */}
                   <button 
-                    onClick={() => onPreviewWorkout(workout)} 
+                    onClick={() => setSelectedWorkout(workout)} 
                     className="flex-1 py-3.5 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                   >
                     <Eye size={16} /> Details
@@ -126,8 +133,8 @@ export const PlanScreen: React.FC<PlanProps> = ({
                     onClick={() => onStartWorkout(workout.id)}
                     className={`flex-[2] py-3.5 text-white rounded-2xl font-black text-xs uppercase tracking-[0.1em] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${
                       completed 
-                      ? 'bg-slate-700 hover:bg-slate-800 shadow-slate-200' 
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-200'
+                        ? 'bg-slate-700 hover:bg-slate-800 shadow-slate-200' 
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-200'
                     }`}
                   >
                     <Play size={16} fill="currentColor" />
@@ -140,7 +147,7 @@ export const PlanScreen: React.FC<PlanProps> = ({
         )}
       </div>
 
-      {/* --- Modernes Info Modal --- */}
+      {/* --- Modernes Info Modal (Typ Erklärung) --- */}
       {showInfo && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
           <div 
@@ -167,6 +174,66 @@ export const PlanScreen: React.FC<PlanProps> = ({
             >
               Verstanden
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- NEUES DETAILS POPUP (Workout Preview) --- */}
+      {selectedWorkout && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-6">
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedWorkout(null)}
+          />
+          <div className="bg-white w-full max-w-md max-h-[85vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative z-10 flex flex-col animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start mb-6 shrink-0">
+              <div>
+                 <div className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-1 rounded-lg inline-block mb-2">
+                   {selectedWorkout.type}
+                 </div>
+                 <h2 className="text-2xl font-black text-slate-900 leading-tight">{selectedWorkout.title}</h2>
+                 <p className="text-slate-400 font-bold text-xs uppercase tracking-wider mt-1">{selectedWorkout.focus}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedWorkout(null)}
+                className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Exercise List */}
+            <div className="flex-1 overflow-y-auto space-y-3 mb-6 pr-2">
+               {selectedWorkout.exercises && selectedWorkout.exercises.map((ex: any, idx: number) => (
+                 <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                   <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
+                     {idx + 1}
+                   </div>
+                   <div>
+                     <h4 className="font-bold text-slate-800 text-sm">{ex.name}</h4>
+                     <p className="text-xs text-gray-500 font-medium">
+                       {ex.sets ? `${ex.sets.length} Sätze` : "Übung"} 
+                       {ex.sets && ex.sets[0]?.targetReps ? ` • ${ex.sets[0].targetReps} Reps` : ""}
+                     </p>
+                   </div>
+                 </div>
+               ))}
+            </div>
+
+            {/* Action Button */}
+            <button 
+              onClick={() => {
+                onStartWorkout(selectedWorkout.id);
+                setSelectedWorkout(null);
+              }} 
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg shadow-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shrink-0"
+            >
+              <Play size={18} fill="currentColor" />
+              Training Starten
+            </button>
+
           </div>
         </div>
       )}
