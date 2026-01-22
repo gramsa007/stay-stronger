@@ -69,7 +69,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-white text-3xl font-black italic uppercase tracking-tighter mb-1">Coach Andy</h1>
+              {/* TITEL GEÄNDERT */}
+              <h1 className="text-white text-3xl font-black italic uppercase tracking-tighter mb-1">STAY STRONGER</h1>
               <p className="text-blue-400 text-xs font-black uppercase tracking-widest">Hyrox Performance AI</p>
             </div>
             <div className="flex gap-2">
@@ -163,7 +164,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         <div className="text-center pb-8">
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Coach Andy v1.0 • Hyrox Ready</p>
+          {/* VERSION TEXT GEÄNDERT */}
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Stay Stronger v1.1 • Hyrox Ready</p>
         </div>
       </div>
     </div>

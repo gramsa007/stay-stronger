@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Clock, ChevronLeft, CheckCircle, BarChart2, Zap, Trophy, FastForward } from 'lucide-react';
+import { Clock, ChevronLeft, CheckCircle, BarChart2, Zap, Trophy, FastForward, Youtube } from 'lucide-react';
 import { formatTime } from '../utils/helpers'; 
 
 interface ActiveWorkoutProps {
@@ -31,14 +31,13 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
   isRestActive,
   restSeconds,
   onSkipRest,
+  history, // WICHTIG: History wird jetzt aktiv genutzt
   ExitDialogComponent,
   AnalysisModalComponent
 }) => {
 
   // --- AUTO-CLEAN EFFECT ---
-  // Dieser Effekt läuft genau EINMAL beim Starten des Screens.
-  // Er "putzt" die Felder: Wenn der eingetragene Wert (z.B. "40") exakt dem Zielwert entspricht,
-  // wird das Feld geleert, damit der Placeholder sichtbar wird und man direkt tippen kann.
+  // Putzt die Felder beim Start, damit man direkt tippen kann.
   useEffect(() => {
     if (!activeWorkoutData || !activeWorkoutData.exercises) return;
 
@@ -46,30 +45,41 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
       if (!exercise.logs) return;
 
       exercise.logs.forEach((set: any, setIdx: number) => {
-        // 1. Bereinige REPS
         const currentReps = String(set.reps || "").trim();
         const targetReps = String(set.targetReps || "").trim();
         
-        // Wenn der aktuelle Wert dem Zielwert entspricht ODER "Max Zeit" enthält -> Löschen
         if (currentReps && (currentReps === targetReps || currentReps.includes('Max Zeit'))) {
            handleInputChange(exIdx, setIdx, 'reps', '');
         }
 
-        // 2. Bereinige GEWICHT / ZEIT
         const currentWeight = String(set.weight || "").trim();
         const targetWeight = String(set.targetWeight || "").trim();
 
-        // Wenn der aktuelle Wert dem Zielwert entspricht ODER "5km" enthält -> Löschen
         if (currentWeight && (currentWeight === targetWeight || currentWeight.includes('5km'))) {
            handleInputChange(exIdx, setIdx, 'weight', '');
         }
       });
     });
-    // Leeres Dependency Array [] garantiert, dass dies nur einmal beim Mounten passiert
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Helfer: Prüft ob es eine Cardio/Zeit-basierte Übung ist
+  //HELPER: Holt die Werte vom letzten Mal aus der History
+  const getLastPerformance = (exerciseName: string) => {
+    if (!history || history.length === 0) return null;
+    
+    // Wir suchen RÜCKWÄRTS (neueste zuerst)
+    for (let i = history.length - 1; i >= 0; i--) {
+      const entry = history[i];
+      if (entry.snapshot && entry.snapshot.exercises) {
+        const match = entry.snapshot.exercises.find((e: any) => e.name === exerciseName);
+        if (match && match.logs) {
+          return match.logs; // Gibt die Sets vom letzten Mal zurück
+        }
+      }
+    }
+    return null;
+  };
+
   const isCardioExercise = (name: string) => {
     const n = name.toLowerCase();
     return n.includes('run') || n.includes('lauf') || n.includes('endurance') || n.includes('cardio') || n.includes('amrap') || n.includes('emom');
@@ -77,6 +87,9 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
 
   const renderExercise = (exercise: any, exIndex: number) => {
     const isCardio = isCardioExercise(exercise.name);
+    
+    // Holen der historischen Daten für diese Übung
+    const lastLogs = getLastPerformance(exercise.name);
 
     return (
       <div key={exIndex} className="mb-6 bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 overflow-hidden relative">
@@ -87,15 +100,24 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
             </div>
             <h3 className="font-black text-xl text-slate-900 leading-tight uppercase italic">{exercise.name}</h3>
           </div>
-          <button 
-            onClick={() => onAnalysisRequest(exercise.name)}
-            className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
-          >
-            <BarChart2 size={20} />
-          </button>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={() => window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(exercise.name + " execution"), '_blank')}
+              className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+            >
+              <Youtube size={20} />
+            </button>
+
+            <button 
+              onClick={() => onAnalysisRequest(exercise.name)}
+              className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+            >
+              <BarChart2 size={20} />
+            </button>
+          </div>
         </div>
         
-        {/* Intelligente Labels */}
         <div className="flex gap-3 mb-2 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
           <span className="w-8 text-center">Set</span>
           <span className="w-20 text-center">{isCardio ? "Zeit/Dist" : "Gewicht"}</span>
@@ -107,12 +129,28 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
           {exercise.logs.map((set: any, setIndex: number) => {
             const isDone = set.completed;
             
-            // CLEAN INPUT LOGIC:
-            // Der Value ist das, was der User wirklich getippt hat.
-            // Der Target-Wert dient nur als Placeholder.
-            
-            const weightPlaceholder = set.targetWeight ? String(set.targetWeight) : (isCardio ? "min" : "kg");
-            const repsPlaceholder = set.targetReps ? String(set.targetReps) : "Reps";
+            // --- ELEPHANT MEMORY LOGIC ---
+            // Wir suchen den passenden Satz vom letzten Mal (gleicher Index)
+            const lastSet = lastLogs ? lastLogs[setIndex] : null;
+
+            // Placeholder Gewicht:
+            // 1. Priorität: Was habe ich letztes Mal geschafft? ("Last: 80")
+            // 2. Priorität: Was ist das Ziel heute? ("40")
+            // 3. Priorität: Standard Text ("kg")
+            let weightPlaceholder = isCardio ? "min" : "kg";
+            if (lastSet && lastSet.weight) {
+                weightPlaceholder = `Last: ${lastSet.weight}`;
+            } else if (set.targetWeight) {
+                weightPlaceholder = String(set.targetWeight);
+            }
+
+            // Placeholder Reps:
+            let repsPlaceholder = "Reps";
+            if (lastSet && lastSet.reps) {
+                repsPlaceholder = `Last: ${lastSet.reps}`;
+            } else if (set.targetReps) {
+                repsPlaceholder = String(set.targetReps);
+            }
 
             return (
               <div 
@@ -131,9 +169,9 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
                     type="text" 
                     inputMode={isCardio ? "text" : "decimal"} 
                     placeholder={weightPlaceholder}
-                    value={set.weight || ""} // Leerer String wenn undefined/null
+                    value={set.weight || ""}
                     onChange={(e) => handleInputChange(exIndex, setIndex, 'weight', e.target.value)}
-                    className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm placeholder:text-gray-300 ${
+                    className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm placeholder:text-gray-400 placeholder:text-[10px] placeholder:font-medium ${
                       isDone ? 'bg-white/50 border-green-200' : 'bg-white border-slate-200'
                     } border`}
                   />
@@ -147,9 +185,9 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
                     type="text" 
                     inputMode="numeric"
                     placeholder={repsPlaceholder}
-                    value={set.reps || ""} // Leerer String wenn undefined/null
+                    value={set.reps || ""}
                     onChange={(e) => handleInputChange(exIndex, setIndex, 'reps', e.target.value)}
-                    className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm placeholder:text-gray-300 ${
+                    className={`w-full p-2.5 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm placeholder:text-gray-400 placeholder:text-[10px] placeholder:font-medium ${
                       isDone ? 'bg-white/50 border-green-200' : 'bg-white border-slate-200'
                     } border`}
                   />
@@ -200,7 +238,6 @@ export const ActiveWorkoutScreen: React.FC<ActiveWorkoutProps> = ({
         </div>
       </div>
 
-      {/* --- Pausen-Overlay mit Skip-Button --- */}
       {isRestActive && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-lg sticky top-[116px] z-20 animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-3">
