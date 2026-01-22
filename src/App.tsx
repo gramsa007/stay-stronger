@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCircle, Dumbbell, History as HistoryIcon, Link as LinkIcon } from 'lucide-react';
+import { UserCircle, Dumbbell, History as HistoryIcon, Link as LinkIcon, Youtube } from 'lucide-react';
 import { useAppPersistence } from './hooks/useAppPersistence';
 import { useActiveSession } from './hooks/useActiveSession';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -11,7 +11,8 @@ import { CooldownScreen } from './screens/CooldownScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { PlanScreen } from './screens/PlanScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
-import { LinksScreen } from './screens/LinksScreen';
+import { VideoLibraryScreen } from './screens/VideoLibraryScreen';
+
 import { ExerciseAnalysisModal } from './components/modals/ExerciseAnalysisModal';
 import { EquipmentModal } from './components/modals/EquipmentModal';
 import { PromptModal } from './components/modals/PromptModal';
@@ -69,8 +70,53 @@ export default function App() {
     });
   };
 
+  // --- UPDATED: Video Logging mit Details ---
+  const handleLogVideo = (video: any, duration: string, intensity: string, note: string) => {
+    persistence.saveHistoryEntry({
+        id: Date.now(),
+        workoutId: -1, 
+        workoutTitle: video.title, // z.B. "Bauch Workout"
+        date: new Date().toISOString(),
+        week: activeWeek,
+        type: "Video Session",
+        totalDuration: duration ? `${duration} Min` : "Video",
+        
+        // Hier bauen wir die Daten so, dass die AI sie später lesen kann:
+        snapshot: { 
+            title: video.title, 
+            focus: "Education / Mobility",
+            exercises: [
+                {
+                    name: "Session Details", 
+                    logs: [
+                        { 
+                            // Wir missbrauchen 'weight' für die Intensität und 'reps' für die Zeit
+                            weight: `RPE ${intensity}/10`, 
+                            reps: `${duration} Min`,
+                            completed: true
+                        }
+                    ]
+                },
+                // Falls eine Notiz da ist, fügen wir sie als Pseudo-Übung hinzu, damit man sie sieht
+                ...(note ? [{
+                    name: "Notiz",
+                    logs: [{ weight: note, reps: "-", completed: true }]
+                }] : [])
+            ]
+        }
+    });
+    triggerWorkoutFinishConfetti();
+  };
+
   const handleExportJSON = () => {
-    const backup = { data: persistence.data, history: persistence.history, prompts: persistence.prompts, equipment: persistence.equipment, links: persistence.links };
+    const backup = { 
+        data: persistence.data, 
+        history: persistence.history, 
+        prompts: persistence.prompts, 
+        equipment: persistence.equipment, 
+        links: persistence.links,
+        videos: persistence.videos 
+    };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -100,14 +146,40 @@ export default function App() {
           </div>
         ) : (
           <div className="pb-24 flex-1 overflow-y-auto overflow-x-hidden">
-            {activeTab === 'profile' && <DashboardScreen stats={persistence.stats} streak={getStreakStats(persistence.history)} onPastePlan={() => setShowPastePlanModal(true)} onOpenCustomLog={() => setShowCustomLogModal(true)} onOpenPlanPrompt={() => setActivePromptModal('plan')} onOpenEquipment={() => setShowEquipmentModal(true)} onOpenSystemPrompt={() => setActivePromptModal('system')} onOpenWarmupPrompt={() => setActivePromptModal('warmup')} onOpenCooldownPrompt={() => setActivePromptModal('cooldown')} onClearPlan={() => persistence.setData([])} onReset={persistence.resetAll} onExport={handleExportJSON} onImport={persistence.importData} />}
+            {activeTab === 'profile' && (
+                <DashboardScreen 
+                    stats={persistence.stats} 
+                    streak={getStreakStats(persistence.history)} 
+                    onPastePlan={() => setShowPastePlanModal(true)} 
+                    onOpenCustomLog={() => setShowCustomLogModal(true)} 
+                    onOpenLibrary={() => setActiveTab('links')} 
+                    onOpenPlanPrompt={() => setActivePromptModal('plan')} 
+                    onOpenEquipment={() => setShowEquipmentModal(true)} 
+                    onOpenSystemPrompt={() => setActivePromptModal('system')} 
+                    onOpenWarmupPrompt={() => setActivePromptModal('warmup')} 
+                    onOpenCooldownPrompt={() => setActivePromptModal('cooldown')} 
+                    onClearPlan={() => persistence.setData([])} 
+                    onReset={persistence.resetAll} 
+                    onExport={handleExportJSON} 
+                    onImport={persistence.importData} 
+                />
+            )}
             {activeTab === 'training' && <PlanScreen activeWeek={activeWeek} setActiveWeek={setActiveWeek} workouts={visibleWorkouts} isWorkoutCompleted={isWorkoutCompleted} onStartWorkout={(id) => { const w = persistence.data.find((x: any) => x.id === id); if(w) session.startSession(w); }} onPreviewWorkout={setPreviewWorkout} />}
-            {activeTab === 'links' && <LinksScreen links={persistence.links} onAddLink={persistence.addLink} onDeleteLink={persistence.deleteLink} />}
+            
+            {activeTab === 'links' && (
+                <VideoLibraryScreen 
+                    videos={persistence.videos} 
+                    onAddVideo={persistence.addVideo} 
+                    onDeleteVideo={persistence.deleteVideo} 
+                    onLogVideo={handleLogVideo}
+                />
+            )}
+
             {activeTab === 'history' && <HistoryScreen history={persistence.history} onDeleteEntry={persistence.deleteHistoryEntry} onSelectEntry={setSelectedHistoryEntry} />}
           </div>
         )}
 
-        {/* Improved Navigation Bar */}
+        {/* Navigation Bar */}
         {session.phase === 'idle' && (
           <nav className="fixed bottom-0 w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm border-t border-gray-100 px-3 py-2 pb-8 flex justify-between items-center z-20">
             {['profile', 'training', 'links', 'history'].map(tab => {
@@ -118,9 +190,13 @@ export default function App() {
                   onClick={() => setActiveTab(tab)} 
                   className={`relative flex flex-col items-center gap-1 p-2 rounded-xl flex-1 transition-all duration-200 ${isActive ? 'text-blue-700 bg-blue-50/50' : 'text-gray-400 active:scale-95'}`}
                 >
-                  {tab === 'profile' ? <UserCircle size={24} /> : tab === 'training' ? <Dumbbell size={24} /> : tab === 'links' ? <LinkIcon size={24} /> : <HistoryIcon size={24} />}
+                  {tab === 'profile' ? <UserCircle size={24} /> : 
+                   tab === 'training' ? <Dumbbell size={24} /> : 
+                   tab === 'links' ? <Youtube size={24} /> : 
+                   <HistoryIcon size={24} />}
+                   
                   <span className="text-[10px] uppercase tracking-wider font-bold">
-                    {tab === 'profile' ? 'Profil' : tab === 'training' ? 'Training' : tab === 'links' ? 'Links' : 'Verlauf'}
+                    {tab === 'profile' ? 'Profil' : tab === 'training' ? 'Training' : tab === 'links' ? 'Videos' : 'Verlauf'}
                   </span>
                   {isActive && (
                     <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-blue-700 rounded-full" />

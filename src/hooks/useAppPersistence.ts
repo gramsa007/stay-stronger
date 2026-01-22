@@ -1,72 +1,124 @@
 import { useState, useEffect } from 'react';
 
+// Default Videos (Falls noch nichts gespeichert ist)
+const DEFAULT_VIDEOS = [
+  { id: 1, title: "Bauch Workout", url: "https://youtu.be/X_ZJpZgRecI?si=ZPPr0TsWadupneDS" },
+  { id: 2, title: "Rücken Workout", url: "https://youtu.be/EKJoeNhkNzU?si=-U2B7LUN03_gnEyw" },
+  { id: 3, title: "Mobility Routine", url: "https://youtu.be/EhmghgFFoRc?si=C-gdvqMDJf2REY2e" }
+];
+
 export const useAppPersistence = () => {
-  // SICHERHEITS-LADEN: Verhindert Abstürze durch kaputte Daten
-  const safeLoad = (key: string, fallback: any) => {
-    try {
-      const saved = localStorage.getItem(key);
-      if (!saved) return fallback;
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
-      return parsed || fallback;
-    } catch (e) {
-      console.error(`Fehler bei ${key}`, e);
-      return fallback;
+  const [data, setData] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [prompts, setPrompts] = useState<any>({});
+  
+  // FIX: Wir nutzen hier 'any[]', damit es mit deinem EquipmentModal kompatibel bleibt
+  const [equipment, setEquipment] = useState<any[]>([]);
+  
+  const [stats, setStats] = useState<any>({});
+  const [links, setLinks] = useState<any[]>([]); 
+  
+  // Videos State
+  const [videos, setVideos] = useState<any[]>(DEFAULT_VIDEOS);
+
+  // Load from LocalStorage on mount
+  useEffect(() => {
+    const loadedData = localStorage.getItem('coachAndyData');
+    if (loadedData) setData(JSON.parse(loadedData));
+
+    const loadedHistory = localStorage.getItem('coachAndyHistory');
+    if (loadedHistory) setHistory(JSON.parse(loadedHistory));
+
+    const loadedPrompts = localStorage.getItem('coachAndyPrompts');
+    if (loadedPrompts) setPrompts(JSON.parse(loadedPrompts));
+    
+    const loadedEquip = localStorage.getItem('coachAndyEquipment');
+    if (loadedEquip) setEquipment(JSON.parse(loadedEquip));
+
+    // Videos laden
+    const loadedVideos = localStorage.getItem('coachAndyVideos');
+    if (loadedVideos) {
+        setVideos(JSON.parse(loadedVideos));
+    } else {
+        setVideos(DEFAULT_VIDEOS);
     }
+  }, []);
+
+  // --- SAVE FUNCTIONS ---
+  const saveData = (newData: any[]) => {
+    setData(newData);
+    localStorage.setItem('coachAndyData', JSON.stringify(newData));
   };
 
-  const [data, setData] = useState<any[]>(() => safeLoad('workout_data', []));
-  const [history, setHistory] = useState<any[]>(() => safeLoad('workout_history', []));
-  const [links, setLinks] = useState<any[]>(() => safeLoad('user_links', []));
-  
-  const [equipment, setEquipment] = useState(() => safeLoad('user_equipment', { 
-    dumbbells: [], kettlebells: [], machines: [] 
-  }));
+  const saveHistoryEntry = (entry: any) => {
+    const newHistory = [entry, ...history];
+    setHistory(newHistory);
+    localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
+  };
 
-  const [prompts, setPrompts] = useState(() => safeLoad('user_prompts', {
-    system: "Du bist Coach Andy, ein erfahrener Fitness-Mentor.",
-    plan: "Erstelle einen Hyrox-fokussierten Trainingsplan.",
-    warmup: "Gib mir ein 5-minütiges dynamisches Warmup.",
-    cooldown: "Gib mir ein entspanntes Cooldown mit Stretching."
-  }));
+  const deleteHistoryEntry = (id: number) => {
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
+  };
 
-  useEffect(() => { localStorage.setItem('workout_data', JSON.stringify(data)); }, [data]);
-  useEffect(() => { localStorage.setItem('workout_history', JSON.stringify(history)); }, [history]);
-  useEffect(() => { localStorage.setItem('user_equipment', JSON.stringify(equipment)); }, [equipment]);
-  useEffect(() => { localStorage.setItem('user_prompts', JSON.stringify(prompts)); }, [prompts]);
-  useEffect(() => { localStorage.setItem('user_links', JSON.stringify(links)); }, [links]);
+  // FIX: Parameter auf 'any' geändert
+  const updateEquipment = (newEquip: any[]) => {
+    setEquipment(newEquip);
+    localStorage.setItem('coachAndyEquipment', JSON.stringify(newEquip));
+  };
 
-  const saveHistoryEntry = (entry: any) => setHistory((prev) => [entry, ...prev]);
-  const deleteHistoryEntry = (id: number) => setHistory((prev) => prev.filter(item => item.id !== id));
-  const updateEquipment = (newEquipment: any) => setEquipment(newEquipment);
-  const updatePrompts = (key: string, value: string) => setPrompts((prev: any) => ({ ...prev, [key]: value }));
-  const addLink = (link: any) => setLinks((prev) => [{ ...link, id: Date.now() }, ...prev]);
-  const deleteLink = (id: number) => setLinks((prev) => prev.filter(l => l.id !== id));
+  const updatePrompts = (key: string, value: string) => {
+    const newPrompts = { ...prompts, [key]: value };
+    setPrompts(newPrompts);
+    localStorage.setItem('coachAndyPrompts', JSON.stringify(newPrompts));
+  };
+
+  // --- Video Functions ---
+  const addVideo = (title: string, url: string) => {
+    const newVideo = { id: Date.now(), title, url };
+    const newVideos = [newVideo, ...videos];
+    setVideos(newVideos);
+    localStorage.setItem('coachAndyVideos', JSON.stringify(newVideos));
+  };
+
+  const deleteVideo = (id: number) => {
+    const newVideos = videos.filter(v => v.id !== id);
+    setVideos(newVideos);
+    localStorage.setItem('coachAndyVideos', JSON.stringify(newVideos));
+  };
+
+  // Reset & Import
+  const resetAll = () => {
+    if(window.confirm("Wirklich ALLES löschen?")) {
+        localStorage.clear();
+        window.location.reload();
+    }
+  };
 
   const importData = (json: any) => {
-    if (!json) return;
-    try {
-      const newData = json.data || json.workouts || (Array.isArray(json) ? json : null);
-      if (newData) localStorage.setItem('workout_data', JSON.stringify(newData));
-      if (json.history) localStorage.setItem('workout_history', JSON.stringify(json.history));
-      if (json.prompts) localStorage.setItem('user_prompts', JSON.stringify(json.prompts));
-      if (json.equipment) localStorage.setItem('user_equipment', JSON.stringify(json.equipment));
-      if (json.links) localStorage.setItem('user_links', JSON.stringify(json.links));
-      window.location.reload();
-    } catch (e) { alert("Import fehlgeschlagen"); }
-  };
-
-  const resetAll = () => {
-    if (window.confirm("Alles löschen?")) {
-      localStorage.clear();
-      window.location.reload();
-    }
+      if (json.data) saveData(json.data);
+      if (json.history) {
+          setHistory(json.history);
+          localStorage.setItem('coachAndyHistory', JSON.stringify(json.history));
+      }
+      if (json.prompts) updatePrompts('all', json.prompts);
+      if (json.equipment) updateEquipment(json.equipment);
+      if (json.videos) {
+          setVideos(json.videos);
+          localStorage.setItem('coachAndyVideos', JSON.stringify(json.videos));
+      }
+      alert("Daten erfolgreich importiert!");
   };
 
   return {
-    data, setData, history, saveHistoryEntry, deleteHistoryEntry,
-    equipment, updateEquipment, prompts, updatePrompts,
-    links, addLink, deleteLink, importData, resetAll,
-    stats: { totalWorkouts: Array.isArray(history) ? history.length : 0 }
+    data, setData: saveData,
+    history, saveHistoryEntry, deleteHistoryEntry,
+    prompts, updatePrompts,
+    equipment, updateEquipment,
+    stats,
+    links,
+    videos, addVideo, deleteVideo, // Exportieren für App.tsx
+    resetAll, importData
   };
 };

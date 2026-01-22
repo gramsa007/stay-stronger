@@ -6,9 +6,10 @@ import {
 
 interface DashboardScreenProps {
   stats: any;
-  streak: any; // Geändert auf 'any' um Typ-Konflikte zu verhindern
+  streak: any;
   onPastePlan: () => void;
   onOpenCustomLog: () => void;
+  onOpenLibrary: () => void; // Prop kann bleiben, wird aber nicht genutzt
   onOpenPlanPrompt: () => void;
   onOpenEquipment: () => void;
   onOpenSystemPrompt: () => void;
@@ -21,8 +22,8 @@ interface DashboardScreenProps {
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
-  stats, streak, onPastePlan, onOpenCustomLog, onOpenPlanPrompt,
-  onOpenEquipment, onOpenSystemPrompt, onOpenWarmupPrompt,
+  stats, streak, onPastePlan, onOpenCustomLog, 
+  onOpenPlanPrompt, onOpenEquipment, onOpenSystemPrompt, onOpenWarmupPrompt,
   onOpenCooldownPrompt, onClearPlan, onReset, onExport, onImport
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,15 +46,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     event.target.value = '';
   };
 
-  // --- SICHERHEITS-CHECK ---
-  // Wir stellen sicher, dass Werte existieren, bevor wir sie anzeigen.
-  // Das verhindert den "Weißen Bildschirm".
   const safeWorkouts = stats?.totalWorkouts || 0;
   const safeStreakCurrent = streak?.current || streak?.currentStreak || 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-32">
-      {/* Hidden File Input für Backup Import */}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -69,7 +66,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              {/* TITEL GEÄNDERT */}
               <h1 className="text-white text-3xl font-black italic uppercase tracking-tighter mb-1">STAY STRONGER</h1>
               <p className="text-blue-400 text-xs font-black uppercase tracking-widest">Hyrox Performance AI</p>
             </div>
@@ -84,7 +80,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Trophy size={20} />
                 <span className="text-[10px] font-black uppercase tracking-wider">Workouts</span>
               </div>
-              {/* Hier nutzen wir die sichere Variable */}
               <div className="text-4xl font-black text-white font-mono">{safeWorkouts}</div>
             </div>
             <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-5 border border-white/10">
@@ -92,7 +87,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Flame size={20} />
                 <span className="text-[10px] font-black uppercase tracking-wider">Streak</span>
               </div>
-              {/* Hier nutzen wir die sichere Variable */}
               <div className="text-4xl font-black text-white font-mono">{safeStreakCurrent}<span className="text-lg text-white/50 ml-1">Tage</span></div>
             </div>
           </div>
@@ -102,7 +96,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Main Actions */}
       <div className="px-5 -mt-12 relative z-20 space-y-6">
         
-        {/* Quick Start */}
+        {/* Quick Start (BUTTON ENTFERNT) */}
         <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
           <h2 className="text-slate-900 font-black italic uppercase text-lg mb-4">Aktionen</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -164,8 +158,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         <div className="text-center pb-8">
-          {/* VERSION TEXT GEÄNDERT */}
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Stay Stronger v1.1 • Hyrox Ready</p>
+          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Stay Stronger v1.3 • Hyrox Ready</p>
         </div>
       </div>
     </div>
