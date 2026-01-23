@@ -140,7 +140,7 @@ export default function App() {
         {/* Content Area */}
         {session.phase !== 'idle' ? (
           <div className="flex-1 overflow-y-auto">
-            {session.phase === 'warmup' && <WarmupScreen prompt={persistence.prompts.warmup} onComplete={(t) => { session.setTotalSeconds(t); session.setPhase('training'); }} onBack={() => setShowExitDialog(true)} />}
+           {session.phase === 'warmup' && <WarmupScreen prompt={persistence.prompts.warmup || "Bereite dich auf das Training vor..."} onComplete={(t) => { session.setTotalSeconds(t); session.setPhase('training'); }} onBack={() => setShowExitDialog(true)} />}
             {session.phase === 'cooldown' && <CooldownScreen prompt={persistence.prompts.cooldown} onComplete={handleFinishWorkout} initialTime={session.totalSeconds} onTick={session.setTotalSeconds} />}
             {session.phase === 'training' && <ActiveWorkoutScreen activeWorkoutData={session.activeWorkoutData} totalSeconds={session.totalSeconds} setTotalSeconds={session.setTotalSeconds} history={persistence.history} onBackRequest={() => setShowExitDialog(true)} onFinishWorkout={() => session.setPhase('cooldown')} onAnalysisRequest={setAnalysisExercise} handleInputChange={session.handleInputChange} toggleSetComplete={session.toggleSetComplete} isRestActive={session.isRestActive} restSeconds={session.restSeconds} activeRestContext={session.activeRestContext} onSkipRest={session.skipRest} />}
           </div>

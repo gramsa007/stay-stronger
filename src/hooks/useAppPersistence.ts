@@ -1,27 +1,35 @@
 import { useState, useEffect } from 'react';
 
-// Default Videos (Falls noch nichts gespeichert ist)
+// Default Videos (Damit die Bibliothek nicht leer ist)
 const DEFAULT_VIDEOS = [
   { id: 1, title: "Bauch Workout", url: "https://youtu.be/X_ZJpZgRecI?si=ZPPr0TsWadupneDS" },
   { id: 2, title: "Rücken Workout", url: "https://youtu.be/EKJoeNhkNzU?si=-U2B7LUN03_gnEyw" },
   { id: 3, title: "Mobility Routine", url: "https://youtu.be/EhmghgFFoRc?si=C-gdvqMDJf2REY2e" }
 ];
 
+// Default Prompts (WICHTIG: Damit die App nicht abstürzt!)
+const DEFAULT_PROMPTS = {
+    system: "Du bist ein Hyrox Coach. Erstelle harte, effektive Workouts.",
+    plan: "Erstelle einen Trainingsplan basierend auf meinen Zielen.",
+    warmup: "Erstelle ein Aufwärmprogramm für Hyrox, ca. 5-10 Minuten.", 
+    cooldown: "Erstelle ein Cooldown-Programm, Fokus auf Stretching und Erholung."
+};
+
 export const useAppPersistence = () => {
   const [data, setData] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [prompts, setPrompts] = useState<any>({});
   
-  // FIX: Wir nutzen hier 'any[]', damit es mit deinem EquipmentModal kompatibel bleibt
-  const [equipment, setEquipment] = useState<any[]>([]);
+  // FIX 1: Wir laden SOFORT die Defaults, damit nichts 'undefined' ist
+  const [prompts, setPrompts] = useState<any>(DEFAULT_PROMPTS);
+  
+  // FIX 2: Typ 'any' verhindert den TypeScript-Fehler beim Equipment
+  const [equipment, setEquipment] = useState<any>([]);
   
   const [stats, setStats] = useState<any>({});
   const [links, setLinks] = useState<any[]>([]); 
-  
-  // Videos State
   const [videos, setVideos] = useState<any[]>(DEFAULT_VIDEOS);
 
-  // Load from LocalStorage on mount
+  // Daten aus dem Speicher laden (überschreibt Defaults, falls vorhanden)
   useEffect(() => {
     const loadedData = localStorage.getItem('coachAndyData');
     if (loadedData) setData(JSON.parse(loadedData));
@@ -30,12 +38,16 @@ export const useAppPersistence = () => {
     if (loadedHistory) setHistory(JSON.parse(loadedHistory));
 
     const loadedPrompts = localStorage.getItem('coachAndyPrompts');
-    if (loadedPrompts) setPrompts(JSON.parse(loadedPrompts));
+    if (loadedPrompts) {
+        setPrompts(JSON.parse(loadedPrompts));
+    } else {
+        // Falls leer, bleiben die Defaults aktiv
+        setPrompts(DEFAULT_PROMPTS);
+    }
     
     const loadedEquip = localStorage.getItem('coachAndyEquipment');
     if (loadedEquip) setEquipment(JSON.parse(loadedEquip));
 
-    // Videos laden
     const loadedVideos = localStorage.getItem('coachAndyVideos');
     if (loadedVideos) {
         setVideos(JSON.parse(loadedVideos));
@@ -45,6 +57,7 @@ export const useAppPersistence = () => {
   }, []);
 
   // --- SAVE FUNCTIONS ---
+
   const saveData = (newData: any[]) => {
     setData(newData);
     localStorage.setItem('coachAndyData', JSON.stringify(newData));
@@ -62,8 +75,7 @@ export const useAppPersistence = () => {
     localStorage.setItem('coachAndyHistory', JSON.stringify(newHistory));
   };
 
-  // FIX: Parameter auf 'any' geändert
-  const updateEquipment = (newEquip: any[]) => {
+  const updateEquipment = (newEquip: any) => {
     setEquipment(newEquip);
     localStorage.setItem('coachAndyEquipment', JSON.stringify(newEquip));
   };
@@ -74,7 +86,6 @@ export const useAppPersistence = () => {
     localStorage.setItem('coachAndyPrompts', JSON.stringify(newPrompts));
   };
 
-  // --- Video Functions ---
   const addVideo = (title: string, url: string) => {
     const newVideo = { id: Date.now(), title, url };
     const newVideos = [newVideo, ...videos];
@@ -118,7 +129,7 @@ export const useAppPersistence = () => {
     equipment, updateEquipment,
     stats,
     links,
-    videos, addVideo, deleteVideo, // Exportieren für App.tsx
+    videos, addVideo, deleteVideo,
     resetAll, importData
   };
 };
