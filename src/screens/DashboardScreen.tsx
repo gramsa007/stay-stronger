@@ -9,7 +9,7 @@ interface DashboardScreenProps {
   streak: any;
   onPastePlan: () => void;
   onOpenCustomLog: () => void;
-  onOpenLibrary: () => void; // Prop kann bleiben, wird aber nicht genutzt
+  onOpenLibrary: () => void; 
   onOpenPlanPrompt: () => void;
   onOpenEquipment: () => void;
   onOpenSystemPrompt: () => void;
@@ -46,6 +46,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     event.target.value = '';
   };
 
+  // Safe Accessors
   const safeWorkouts = stats?.totalWorkouts || 0;
   const safeStreakCurrent = streak?.current || streak?.currentStreak || 0;
 
@@ -96,7 +97,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Main Actions */}
       <div className="px-5 -mt-12 relative z-20 space-y-6">
         
-        {/* Quick Start (BUTTON ENTFERNT) */}
+        {/* Quick Start */}
         <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
           <h2 className="text-slate-900 font-black italic uppercase text-lg mb-4">Aktionen</h2>
           <div className="grid grid-cols-2 gap-3">

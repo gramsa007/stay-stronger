@@ -70,18 +70,18 @@ export default function App() {
     });
   };
 
-  // --- UPDATED: Video Logging mit Details ---
+  // --- VIDEO LOGGING MIT DETAILS ---
   const handleLogVideo = (video: any, duration: string, intensity: string, note: string) => {
     persistence.saveHistoryEntry({
         id: Date.now(),
         workoutId: -1, 
-        workoutTitle: video.title, // z.B. "Bauch Workout"
+        workoutTitle: video.title, 
         date: new Date().toISOString(),
         week: activeWeek,
         type: "Video Session",
         totalDuration: duration ? `${duration} Min` : "Video",
         
-        // Hier bauen wir die Daten so, dass die AI sie später lesen kann:
+        // Snapshot für AI Analyse
         snapshot: { 
             title: video.title, 
             focus: "Education / Mobility",
@@ -90,14 +90,12 @@ export default function App() {
                     name: "Session Details", 
                     logs: [
                         { 
-                            // Wir missbrauchen 'weight' für die Intensität und 'reps' für die Zeit
                             weight: `RPE ${intensity}/10`, 
                             reps: `${duration} Min`,
                             completed: true
                         }
                     ]
                 },
-                // Falls eine Notiz da ist, fügen wir sie als Pseudo-Übung hinzu, damit man sie sieht
                 ...(note ? [{
                     name: "Notiz",
                     logs: [{ weight: note, reps: "-", completed: true }]
@@ -115,7 +113,7 @@ export default function App() {
         prompts: persistence.prompts, 
         equipment: persistence.equipment, 
         links: persistence.links,
-        videos: persistence.videos 
+        videos: persistence.videos // WICHTIG: Videos sichern
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const link = document.createElement('a');
@@ -127,8 +125,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black flex justify-center font-sans antialiased">
-      <div className="w-full max-w-md bg-gray-50 min-h-screen relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col">
+    // FIX: 'overflow-hidden fixed inset-0 touch-none' verhindert Wackeln auf Mobile
+    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black flex justify-center font-sans antialiased overflow-hidden fixed inset-0 touch-none">
+      
+      {/* Container ist jetzt h-full und relative für App-Feeling */}
+      <div className="w-full max-w-md bg-gray-50 h-full relative shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col">
+        
         {/* Modals */}
         {showCustomLogModal && <CustomLogModal onClose={() => setShowCustomLogModal(false)} onSave={handleSaveCustomLog} />}
         {analysisExercise && <ExerciseAnalysisModal onClose={() => setAnalysisExercise(null)} exerciseName={analysisExercise} history={persistence.history} />}
@@ -140,15 +142,17 @@ export default function App() {
         {/* Content Area */}
         {session.phase !== 'idle' ? (
           <div className="flex-1 overflow-y-auto">
-           {session.phase === 'warmup' && <WarmupScreen prompt={persistence.prompts.warmup || "Bereite dich auf das Training vor..."} onComplete={(t) => { session.setTotalSeconds(t); session.setPhase('training'); }} onBack={() => setShowExitDialog(true)} />}
-            {session.phase === 'cooldown' && <CooldownScreen prompt={persistence.prompts.cooldown} onComplete={handleFinishWorkout} initialTime={session.totalSeconds} onTick={session.setTotalSeconds} />}
+            {/* FIX: Fallback Prompt, damit es nicht crasht */}
+            {session.phase === 'warmup' && <WarmupScreen prompt={persistence.prompts.warmup || "Bereite dich auf das Training vor..."} onComplete={(t) => { session.setTotalSeconds(t); session.setPhase('training'); }} onBack={() => setShowExitDialog(true)} />}
+            {session.phase === 'cooldown' && <CooldownScreen prompt={persistence.prompts.cooldown || "Cooldown Zeit..."} onComplete={handleFinishWorkout} initialTime={session.totalSeconds} onTick={session.setTotalSeconds} />}
             {session.phase === 'training' && <ActiveWorkoutScreen activeWorkoutData={session.activeWorkoutData} totalSeconds={session.totalSeconds} setTotalSeconds={session.setTotalSeconds} history={persistence.history} onBackRequest={() => setShowExitDialog(true)} onFinishWorkout={() => session.setPhase('cooldown')} onAnalysisRequest={setAnalysisExercise} handleInputChange={session.handleInputChange} toggleSetComplete={session.toggleSetComplete} isRestActive={session.isRestActive} restSeconds={session.restSeconds} activeRestContext={session.activeRestContext} onSkipRest={session.skipRest} />}
           </div>
         ) : (
           <div className="pb-24 flex-1 overflow-y-auto overflow-x-hidden">
             {activeTab === 'profile' && (
                 <DashboardScreen 
-                    stats={persistence.stats} 
+                    // FIX: Stats direkt aus History berechnen
+                    stats={{ totalWorkouts: persistence.history.length }} 
                     streak={getStreakStats(persistence.history)} 
                     onPastePlan={() => setShowPastePlanModal(true)} 
                     onOpenCustomLog={() => setShowCustomLogModal(true)} 

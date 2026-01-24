@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 
-// Default Videos (Damit die Bibliothek nicht leer ist)
+// Default Videos mit Kategorien
 const DEFAULT_VIDEOS = [
-  { id: 1, title: "Bauch Workout", url: "https://youtu.be/X_ZJpZgRecI?si=ZPPr0TsWadupneDS" },
-  { id: 2, title: "Rücken Workout", url: "https://youtu.be/EKJoeNhkNzU?si=-U2B7LUN03_gnEyw" },
-  { id: 3, title: "Mobility Routine", url: "https://youtu.be/EhmghgFFoRc?si=C-gdvqMDJf2REY2e" }
+  { id: 1, title: "Bauch Workout", url: "https://youtu.be/X_ZJpZgRecI?si=ZPPr0TsWadupneDS", category: "Workout" },
+  { id: 2, title: "Rücken Workout", url: "https://youtu.be/EKJoeNhkNzU?si=-U2B7LUN03_gnEyw", category: "Workout" },
+  { id: 3, title: "Mobility Routine", url: "https://youtu.be/EhmghgFFoRc?si=C-gdvqMDJf2REY2e", category: "Mobility" }
 ];
 
-// Default Prompts (WICHTIG: Damit die App nicht abstürzt!)
+// Default Prompts
 const DEFAULT_PROMPTS = {
     system: "Du bist ein Hyrox Coach. Erstelle harte, effektive Workouts.",
     plan: "Erstelle einen Trainingsplan basierend auf meinen Zielen.",
@@ -18,18 +18,12 @@ const DEFAULT_PROMPTS = {
 export const useAppPersistence = () => {
   const [data, setData] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  
-  // FIX 1: Wir laden SOFORT die Defaults, damit nichts 'undefined' ist
   const [prompts, setPrompts] = useState<any>(DEFAULT_PROMPTS);
-  
-  // FIX 2: Typ 'any' verhindert den TypeScript-Fehler beim Equipment
   const [equipment, setEquipment] = useState<any>([]);
-  
   const [stats, setStats] = useState<any>({});
   const [links, setLinks] = useState<any[]>([]); 
   const [videos, setVideos] = useState<any[]>(DEFAULT_VIDEOS);
 
-  // Daten aus dem Speicher laden (überschreibt Defaults, falls vorhanden)
   useEffect(() => {
     const loadedData = localStorage.getItem('coachAndyData');
     if (loadedData) setData(JSON.parse(loadedData));
@@ -41,7 +35,6 @@ export const useAppPersistence = () => {
     if (loadedPrompts) {
         setPrompts(JSON.parse(loadedPrompts));
     } else {
-        // Falls leer, bleiben die Defaults aktiv
         setPrompts(DEFAULT_PROMPTS);
     }
     
@@ -86,8 +79,9 @@ export const useAppPersistence = () => {
     localStorage.setItem('coachAndyPrompts', JSON.stringify(newPrompts));
   };
 
-  const addVideo = (title: string, url: string) => {
-    const newVideo = { id: Date.now(), title, url };
+  // UPDATE: Jetzt mit Kategorie!
+  const addVideo = (title: string, url: string, category: string = "Allgemein") => {
+    const newVideo = { id: Date.now(), title, url, category };
     const newVideos = [newVideo, ...videos];
     setVideos(newVideos);
     localStorage.setItem('coachAndyVideos', JSON.stringify(newVideos));
@@ -99,7 +93,6 @@ export const useAppPersistence = () => {
     localStorage.setItem('coachAndyVideos', JSON.stringify(newVideos));
   };
 
-  // Reset & Import
   const resetAll = () => {
     if(window.confirm("Wirklich ALLES löschen?")) {
         localStorage.clear();
