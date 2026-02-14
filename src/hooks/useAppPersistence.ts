@@ -102,17 +102,31 @@ export const useAppPersistence = () => {
 
   const importData = (json: any) => {
       if (json.data) saveData(json.data);
+      
       if (json.history) {
           setHistory(json.history);
           localStorage.setItem('coachAndyHistory', JSON.stringify(json.history));
       }
-      if (json.prompts) updatePrompts('all', json.prompts);
+
+      // FIX: Intelligenter Import für Prompts (entpackt verschachtelte "all" Ebenen)
+      if (json.prompts) {
+          let cleanPrompts = json.prompts;
+          // Solange eine "all"-Verschachtelung existiert, graben wir tiefer
+          while (cleanPrompts.all) {
+              cleanPrompts = cleanPrompts.all;
+          }
+          setPrompts(cleanPrompts);
+          localStorage.setItem('coachAndyPrompts', JSON.stringify(cleanPrompts));
+      }
+
       if (json.equipment) updateEquipment(json.equipment);
+      
       if (json.videos) {
           setVideos(json.videos);
           localStorage.setItem('coachAndyVideos', JSON.stringify(json.videos));
       }
-      alert("Daten erfolgreich importiert!");
+      
+      alert("Daten erfolgreich importiert! Deine Prompts sind wieder da.");
   };
 
   return {
